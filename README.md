@@ -1,4 +1,2 @@
 # node_messenger
-///
-df;jhglkdfjlhjdfg
-GAY GAY GAY
+console.log("Kiev");
