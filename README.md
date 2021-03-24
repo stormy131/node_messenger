@@ -1,4 +1,2 @@
 # node_messenger
-int a;
-cin >> a;
-cout << a + 1;
+3 strong man and 1 repositoriй
