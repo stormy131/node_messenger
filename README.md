@@ -1,3 +1,4 @@
 # node_messenger
-int a;cin >> a;
+int a;
+cin >> a;
 cout << a + 1;
