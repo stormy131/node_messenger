@@ -34,7 +34,7 @@ const checkDB = () => new Promise(resolve => {
 
 const createAccount = (login, password) => new Promise((resolve, reject) => {
   fs.readFile('data/authorize', (err, data) => {
-    if (err) console.log('CHECK YOUR DB!');
+    if (err) reject('CHECK YOUR DB!');
 
     const users = data.toString().split('\n');
     users.pop();
@@ -73,6 +73,9 @@ const checkAccount = (login, password) => new Promise((resolve, reject) => {
     .then(value => console.log(value))
     .catch(reason => console.log(reason));
   await createAccount('QWEasdZXC', 'Arrtem 13')
+    .then(value => console.log(value))
+    .catch(reason => console.log(reason));
+  await createAccount('Arrtem 13','123123')
     .then(value => console.log(value))
     .catch(reason => console.log(reason));
   await checkAccount('Arrtem 13', 'QWEasdZXC').then(value => console.log(value))
