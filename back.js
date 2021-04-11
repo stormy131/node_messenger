@@ -105,6 +105,8 @@ const checkAccount = (login, password) => new Promise( resolve => {
   });
 });
 
+// INFO-ARRAY INTERFACE: [FULL NAME, AGE, COUNTRY, CITY, INFO]
+
 const addInfo = async (login, info) => {
   const user = new Account(login, ...info);
   await fs.appendFile('data/info', JSON.stringify(user) + '\n', err => {
