@@ -177,5 +177,5 @@ module.exports = Api;
   await api.checkAccount('Artem', '!@#');
   await api.addInfo('Artem', ['1','2','3','4','5']);
   await api.getInfo('Artem');
-  await api.addMessage('Artem', 'Dmytro', 'Welcome to node_messanger!)');
+  await api.addMessage('Artem', 'Dmytro', 'Welcome to node_messenger!)');
 })();
