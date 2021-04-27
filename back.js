@@ -19,7 +19,7 @@ class Account {
   }
 }
 
-class Api{
+class back{
 
   // TODO IN FRONT:
   // FIRSTLY, NEED TO CHECK/CREATE DATABASE IN DIRECTORY OF PROJECT
@@ -94,7 +94,7 @@ class Api{
         if (err){
           console.log('CHECK DB');
           resolve();
-          return;
+          return
         }
 
         const users = data.toString().split('\n');
@@ -103,7 +103,7 @@ class Api{
           if (login === user[0] && password === user[1]){
             console.log('ACC EXISTS');
             resolve(true);
-            return;
+            return
           }
         }
 
@@ -166,11 +166,11 @@ class Api{
 
 }
 
-module.exports = Api;
+module.exports = back;
 
 //TESTING
 
-(async () => {
+/*(async () => {
   const api = new Api;
   await api.checkDB();
   await api.createAccount('Artem', '!@#');
@@ -178,4 +178,4 @@ module.exports = Api;
   await api.addInfo('Artem', ['1','2','3','4','5']);
   await api.getInfo('Artem');
   await api.addMessage('Artem', 'Dmytro', 'Welcome to node_messenger!)');
-})();
+})();*/
