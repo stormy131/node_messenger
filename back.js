@@ -19,7 +19,7 @@ class Account {
   }
 }
 
-class Api{
+class back {
 
   // TODO IN FRONT:
   // FIRSTLY, NEED TO CHECK/CREATE DATABASE IN DIRECTORY OF PROJECT
@@ -65,12 +65,12 @@ class Api{
 
         const users = data.toString().split('\n');
         users.pop();
-        console.log(users);
+        //console.log(users);
         for (let i = 0; i < users.length; i++) {
           const user = users[i].split(' - ');
           if (login === user[0]){
             console.log('LOGIN IS ALREADY USED');
-            resolve();
+            resolve(false);
             return;
           }
         }
@@ -81,8 +81,8 @@ class Api{
             reject();
           }
 
-          console.log('created');
-          resolve();
+          //console.log('created');
+          resolve(true);
         });
       });
     });
@@ -94,16 +94,16 @@ class Api{
         if (err){
           console.log('CHECK DB');
           resolve();
-          return;
+          return
         }
 
         const users = data.toString().split('\n');
         for (let i = 0; i < users.length; i++) {
           const user = users[i].split(' - ');
           if (login === user[0] && password === user[1]){
-            console.log('ACC EXISTS');
+            //console.log('ACC EXISTS');
             resolve(true);
-            return;
+            return
           }
         }
 
@@ -125,22 +125,24 @@ class Api{
     });
   }
 
-  async getInfo(login){
-    await fs.readFile('data/info', (err, data) => {
-      if (err) {
-        console.log('CHECK YOUR DB');
-        return;
-      }
-
-      const content = data.toString().split('\n');
-      content.pop();
-      for (const line of content) {
-        const user = JSON.parse(line);
-        if (user.login === login) {
-          console.dir(user);
+  getInfo(login){
+    return new Promise(resolve => {
+      fs.readFile('data/info', (err, data) => {
+        if (err) {
+          console.log('CHECK YOUR DB');
+          return;
         }
-      }
-    });
+
+        const content = data.toString().split('\n');
+        content.pop();
+        for (const line of content) {
+          const user = JSON.parse(line);
+          if (user.login === login) {
+            resolve(user);
+          }
+        }
+      });
+    })
   }
 
   async addMessage(from, to, message){
@@ -166,16 +168,16 @@ class Api{
 
 }
 
-module.exports = Api;
+module.exports = back;
 
 //TESTING
 
-(async () => {
+/*(async () => {
   const api = new Api;
   await api.checkDB();
   await api.createAccount('Artem', '!@#');
   await api.checkAccount('Artem', '!@#');
   await api.addInfo('Artem', ['1','2','3','4','5']);
   await api.getInfo('Artem');
-  await api.addMessage('Artem', 'Dmytro', 'Welcome to node_messanger!)');
-})();
+  await api.addMessage('Artem', 'Dmytro', 'Welcome to node_messenger!)');
+})();*/
