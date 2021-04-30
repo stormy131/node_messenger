@@ -3,10 +3,10 @@
 const fs = require('fs');
 
 class Account {
-  constructor(login, name, age, country, city, info) {
+  constructor(login, name, birth, country, city, info) {
     this.login = login;
     this.name = name;
-    this.age = age;
+    this.birth = birth;
     this.country = country;
     this.city = city;
     this.info = info;
@@ -19,7 +19,7 @@ class Account {
   }
 }
 
-class back {
+class Back {
 
   // TODO IN FRONT:
   // FIRSTLY, NEED TO CHECK/CREATE DATABASE IN DIRECTORY OF PROJECT
@@ -44,12 +44,17 @@ class back {
             if(err) resolve();
           });
 
+          fs.mkdir('data/dropbox', err => {
+            if(err) resolve();
+          });
+
           return;
         }
 
         fs.writeFile('data/authorize', '', () => {});
         fs.writeFile('data/info', '', () => {});
         fs.mkdir('data/messages', () => {});
+        fs.mkdir('data/dropbox', () => {});
         resolve();
       });
     });
@@ -65,7 +70,6 @@ class back {
 
         const users = data.toString().split('\n');
         users.pop();
-        //console.log(users);
         for (let i = 0; i < users.length; i++) {
           const user = users[i].split(' - ');
           if (login === user[0]){
@@ -81,7 +85,6 @@ class back {
             reject();
           }
 
-          //console.log('created');
           resolve(true);
         });
       });
@@ -113,11 +116,11 @@ class back {
     });
   }
 
-  // INFO-ARRAY INTERFACE: [FULL NAME, AGE, COUNTRY, CITY, INFO]
+  // INFO-ARRAY INTERFACE: [FULL NAME, BIRTH, COUNTRY, CITY, INFO]
 
   async addInfo(login, info){
     const user = new Account(login, ...info);
-    await fs.appendFile('data/info', JSON.stringify(user) + '\n', err => {
+    fs.appendFile('data/info', JSON.stringify(user) + '\n', err => {
       if (err) {
         console.log('SMTH went wrong while appending data');
         return;
@@ -145,6 +148,24 @@ class back {
     })
   }
 
+  async changeInfo(login, newInfo){
+    fs.readFile('data/info', (err, data) => {
+      if(err){
+        console.log('Check your DB');
+        process.exit(0);
+      }
+
+      const content = data.toString().split('\n');
+      for(let i = 0; i < content.length; i++){
+        const user = JSON.parse(content[i]);
+        if(user.login === login){
+          content[i] = JSON.stringify(newInfo);
+          fs.writeFile('data/info', content.join('\n'), () => {});
+        }
+      }
+    });
+  }
+
   async addMessage(from, to, message){
     fs.readFile('data/messages/' + from + ' - ' + to, err => {
       if(err){
@@ -159,6 +180,8 @@ class back {
                         from + ': ' + message + '\n', () => {});
           return;
         });
+
+        return;
       }
 
       fs.appendFile('data/messages/' + from + ' - ' + to,
@@ -166,18 +189,61 @@ class back {
     });
   }
 
+  getMessages(from, to){
+    return new Promise(resolve => {
+      fs.readFile('data/messages/' + from + ' - ' + to, (err, data) => {
+        if(err){
+          fs.readFile('data/messages/' + to + ' - ' + from, (err, data) => {
+            if(err){
+              resolve();
+              return;
+            }
+
+            const content = data.toString().split('\n');
+            content.pop();
+            resolve(content);
+          });
+          
+          return;
+        }
+
+        const content = data.toString().split('\n');
+        content.pop();
+        resolve(content);
+      });
+    });
+  }
+
+  async changePassword(login, newPassword){
+    fs.readFile('data/authorize', (err, data) => {
+      if(err){
+        console.log('Check your DB');
+        process.exit(0);
+      }
+
+      const content = data.toString().split('\n');
+      for(let i = 0; i < content.length; i++){
+        const account = content[i].split(' - ');
+        if(account[0] === login){
+          content[i] = login + ' - ' + newPassword;
+
+          fs.writeFile('data/authorize', content.join('\n'), () => {});
+        }
+      }
+    });
+  }
+
+  async sendFile(to, path){
+    fs.mkdir('data/dropbox/' + to, () => {
+      const file = path.split('/').pop();
+      fs.copyFile(path, 'data/dropbox/' + to + '/' + file, err => {
+        if(err){
+          console.log('Something went wrong while sending:\n');
+          throw err;
+        }
+      });
+    });
+  }
 }
 
-module.exports = back;
-
-//TESTING
-
-/*(async () => {
-  const api = new Api;
-  await api.checkDB();
-  await api.createAccount('Artem', '!@#');
-  await api.checkAccount('Artem', '!@#');
-  await api.addInfo('Artem', ['1','2','3','4','5']);
-  await api.getInfo('Artem');
-  await api.addMessage('Artem', 'Dmytro', 'Welcome to node_messenger!)');
-})();*/
+module.exports = Back;
