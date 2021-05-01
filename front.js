@@ -56,11 +56,14 @@ const messages = {
     regFail: 'Registration failed',
     regSuccess: 'Your account has been successfully created',
     infoAddSuccess: 'Information successfully added',
+    infoAddLater: 'You can always add information later',
     infoCheck: 'Information about your account:',
+    infoUpdate: 'Information was updated successfully',
     loggedIn: 'You are logged in',
     notLoggedIn: 'You are not logged in',
     invalidInput: 'Invalid input, please try again:',
     messageSuccess: 'The message was successfully sent',
+    messageNotFound: 'Cant find this dialog, lease try again',
     bye: 'Goodbye. Have a good day!'
 }
 
@@ -143,6 +146,10 @@ async function registrationScreen() {
                 infoArray.push(name, age, country, city, info);
                 await backend.addInfo(login, infoArray);
                 showMessage(messages.infoAddSuccess, 'green');
+            } else {
+                const infoArray = ['', '', '', '', ''];
+                await backend.addInfo(login, infoArray);
+                showMessage(messages.infoAddLater, 'white');
             }
         } else {
             showMessage(messages.regFail, 'red');
@@ -162,18 +169,51 @@ async function infoScreen() {
     console.table(infoObject);
 }
 
+let infoRecursion = 0;
+
 async function editInfoScreen() {
     const infoObject = await backend.getInfo(currentLogin);
-    const item = await question(`What do you want to change: `);
 
-    if (typeof infoObject[item] !== "undefined") {
+    if(infoRecursion === 0) {
+        console.log('What do you want to cange:\n' +
+        '1 - name\n' +
+        '2 - birth date\n' +
+        '3 - country\n' +
+        '4 - city\n' +
+        '5 - info')
+    }
+
+    const input = await question('[1/2/3/4/5/6]: ');
+
+    let item;
+
+    if (input === ('1' || '2' || '3' || '4' || '5')) {
+        if (input == 1) {
+            item = 'name'
+        } 
+        else if (input == 2) {
+            item = 'birth'
+        }
+        else if (input == 3) {
+            item = 'country'
+        }
+        else if (input == 4) {
+            item = 'city'
+        }
+        else if (input == 5) {
+            item = 'info'
+        };
+        
         infoObject[item] = await question('New information: ');
 
         await backend.changeInfo(currentLogin, infoObject);
 
-        console.log('info succesfully changed');
+        showMessage(messages.infoUpdate, 'green');
+
+        infoRecursion = 0;
     } else {
         showMessage(messages.invalidInput, 'red');
+        infoRecursion++;
         await editInfoScreen();
     }
 
@@ -203,8 +243,14 @@ async function checkMessage() {
 
     const infoObject = await backend.getMessages(currentLogin, item);
 
-    const dialog = infoObject.join('\n');
-    console.log(dialog);
+    if(infoObject === undefined) {
+        showMessage(messages.messageNotFound, 'red');
+        checkMessage();
+    } else {
+        const dialog = infoObject.join('\n');
+        console.log(dialog);
+    }
+
 }
 
 async function sendMessage() {
