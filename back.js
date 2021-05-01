@@ -255,17 +255,32 @@ class Back {
       });
     });
   }
+
+  getChats(login){
+    return new Promise(resolve => {
+      fs.readdir('data/messages', (err, files) => {
+        if(err){
+          console.log('Smth went wrong in reading dir');
+          resolve();
+        }
+
+        let result = [];
+        for(let i = 0; i < files.length; i++){
+          const file = files[i].split(' - ');
+          const index = file.indexOf(login);
+          
+          if(index === -1){
+            resolve();
+          } else {
+            const chat = file.filter(user => user !== login);
+            result = result.concat(chat);
+          }
+        }
+
+        resolve(result);
+      });
+    });
+  }
 }
 
 module.exports = Back;
-
-
-// (async () => {
-//   const api = new Back();
-//   await api.checkDB();
-//   const a = await api.getInfo('B');
-//   console.log(a);
-//   //await api.changeInfo('B', {login: 'B', a: 1});
-//   //await api.addInfo('B', ['-','-','-','-','-']);
-//   //await api.addInfo('C', ['-','-','-','-','-']);
-// })();
