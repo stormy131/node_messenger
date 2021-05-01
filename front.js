@@ -156,35 +156,29 @@ async function registrationScreen() {
 }
 
 async function infoScreen() {
-    if (status) {
-        const infoObject = await backend.getInfo(currentLogin);
-        console.log('\x1b[1A');
-        showMessage(messages.infoCheck, 'white');
-        console.table(infoObject);
-    } else {
-        showMessage(messages.notLoggedIn, 'red');
-    }
-
-    rl.prompt();
+    const infoObject = await backend.getInfo(currentLogin);
+    console.log('\x1b[1A');
+    showMessage(messages.infoCheck, 'white');
+    console.table(infoObject);
 }
 
 async function editInfoScreen() {
     const infoObject = await backend.getInfo(currentLogin);
     const item = await question(`What do you want to change: `);
+    console.log(item);
 
     if (typeof infoObject[item] !== "undefined") {
         infoObject[item] = await question('New information: ');
+        console.log(infoObject);
 
-        const values = Object.values(infoObject);
-        values.shift();
-        console.log(values);
-        await backend.addInfo(currentLogin, values);
+        await backend.changeInfo(currentLogin, infoObject);
+
+        console.log('info succesfully changed');
     } else {
         showMessage(messages.invalidInput, 'red');
         await editInfoScreen();
     }
 
-    rl.prompt();
 }
 
 async function accountScreen() {
@@ -202,10 +196,17 @@ async function accountScreen() {
     } else {
         showMessage(messages.notLoggedIn, 'red');
     }
+
+    rl.prompt();
 }
 
-function checkMessage() {
+async function checkMessage() {
+    const item = await question(`Which messages: `);
 
+    const infoObject = await backend.getMessages(currentLogin, item);
+
+    const dialog = infoObject.join('\n');
+    console.log(dialog);
 }
 
 async function sendMessage() {

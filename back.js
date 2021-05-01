@@ -156,6 +156,11 @@ class Back {
       }
 
       const content = data.toString().split('\n');
+
+      if(content[content.length - 1] === '') {
+        content.pop();
+      }
+
       for(let i = 0; i < content.length; i++){
         const user = JSON.parse(content[i]);
         if(user.login === login){
