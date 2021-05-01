@@ -137,7 +137,9 @@ class Back {
         }
 
         const content = data.toString().split('\n');
-        content.pop();
+        if(content[content.length - 1] === ''){
+          content.pop();
+        }
         for (const line of content) {
           const user = JSON.parse(line);
           if (user.login === login) {
@@ -156,7 +158,11 @@ class Back {
       }
 
       const content = data.toString().split('\n');
-      for(let i = 0; i < content.length; i++){
+      if(content[content.length - 1] === ''){  
+        content.pop();
+      }
+      
+        for(let i = 0; i < content.length; i++){
         const user = JSON.parse(content[i]);
         if(user.login === login){
           content[i] = JSON.stringify(newInfo);
@@ -227,7 +233,12 @@ class Back {
         if(account[0] === login){
           content[i] = login + ' - ' + newPassword;
 
-          fs.writeFile('data/authorize', content.join('\n'), () => {});
+          if(content.length === 1){
+            content[0] += '\n';
+            fs.writeFile('data/authorize', content[0], () => {});  
+          } else {
+            fs.writeFile('data/authorize', content.join('\n'), () => {});
+          }
         }
       }
     });
@@ -247,3 +258,14 @@ class Back {
 }
 
 module.exports = Back;
+
+
+(async () => {
+  const api = new Back();
+  await api.checkDB();
+  const a = await api.getInfo('B');
+  console.log(a);
+  //await api.changeInfo('B', {login: 'B', a: 1});
+  //await api.addInfo('B', ['-','-','-','-','-']);
+  //await api.addInfo('C', ['-','-','-','-','-']);
+})();
