@@ -1,7 +1,2 @@
-# node_messenger
-3 strong man and 1 repositoriй
-bruh
-234
-test comm
-
-00
+# Node Messenger
+A simple console-based program for messaging
