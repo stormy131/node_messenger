@@ -166,7 +166,7 @@ class Back {
         const user = JSON.parse(content[i]);
         if(user.login === login){
           content[i] = JSON.stringify(newInfo);
-          fs.writeFile('data/info', content.join('\n'), () => {});
+          fs.writeFile('data/info', content.join('\n') + '\n', () => {});
         }
       }
     });
@@ -260,12 +260,12 @@ class Back {
 module.exports = Back;
 
 
-(async () => {
-  const api = new Back();
-  await api.checkDB();
-  const a = await api.getInfo('B');
-  console.log(a);
-  //await api.changeInfo('B', {login: 'B', a: 1});
-  //await api.addInfo('B', ['-','-','-','-','-']);
-  //await api.addInfo('C', ['-','-','-','-','-']);
-})();
+// (async () => {
+//   const api = new Back();
+//   await api.checkDB();
+//   const a = await api.getInfo('B');
+//   console.log(a);
+//   //await api.changeInfo('B', {login: 'B', a: 1});
+//   //await api.addInfo('B', ['-','-','-','-','-']);
+//   //await api.addInfo('C', ['-','-','-','-','-']);
+// })();

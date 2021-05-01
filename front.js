@@ -20,7 +20,7 @@ const commands = {
         console.log('Commands:', Object.keys(commands).join(', '));
     },
     registration() {
-        registrationScreen();
+        registrationScreen()
     },
     login() {
         loginScreen();
@@ -28,14 +28,14 @@ const commands = {
     logout() {
         logoutScreen();
     },
-    show_account() {
-        infoScreen();
+    account() {
+        accountScreen();
     },
-    edit_account() {
-        editInfoScreen();
-    },
-    writeMessage() {
+    messages() {
         messageScreen();
+    },
+    notifications() {
+
     },
     exit() {
         rl.close();
@@ -44,7 +44,7 @@ const commands = {
 
 
 const messages = {
-    greeting: 'Welcome to Node Messenger',
+    greeting: 'Welcome to Node Messenger (° ͜ʖ͡°)╭∩╮',
     unknown: 'Unknown command',
     helpComm: 'type "help" to see the command list',
     logComm: 'type "login" for login',
@@ -55,11 +55,15 @@ const messages = {
     logoutSuccess: 'You have logged out',
     regFail: 'Registration failed',
     regSuccess: 'Your account has been successfully created',
-    regQuestion: 'Would you like to add some information about you to your account right now?\n' +
-        'You can always do it later',
     infoAddSuccess: 'Information successfully added',
+    infoAddLater: 'You can always add information later',
+    infoCheck: 'Information about your account:',
+    infoUpdate: 'Information was updated successfully',
     loggedIn: 'You are logged in',
     notLoggedIn: 'You are not logged in',
+    invalidInput: 'Invalid input, please try again:',
+    messageSuccess: 'The message was successfully sent',
+    messageNotFound: 'Cant find this dialog, lease try again',
     bye: 'Goodbye. Have a good day!'
 }
 
@@ -72,11 +76,15 @@ function showMessage(text, color, state) {
         index = '\u001b[31m';
     } else if (color === 'green') {
         index = '\u001b[32m';
+    } else if (color === 'cyan') {
+        index = '\u001b[36m';
     }
 
     console.log(`${index}${text}\u001b[37m`);
 
-    status = state;
+    if (state === true || state === false) {
+        status = state;
+    }
 }
 
 
@@ -97,12 +105,12 @@ async function loginScreen() {
             showMessage(messages.logSuccess, 'green', true);
             currentLogin = login;
         } else {
-            showMessage(messages.logFail, 'red', false);
+            showMessage(messages.logFail, 'red');
         }
 
         rl.prompt();
     } else {
-        showMessage(messages.loggedIn, 'red', true);
+        showMessage(messages.loggedIn, 'red');
     }
 
 }
@@ -111,7 +119,7 @@ function logoutScreen() {
     if (status) {
         showMessage(messages.logoutSuccess, 'green', false);
     } else {
-        showMessage(messages.logoutFail, 'red', false);
+        showMessage(messages.logoutFail, 'red');
     }
 }
 
@@ -137,62 +145,146 @@ async function registrationScreen() {
                 const infoArray = [];
                 infoArray.push(name, age, country, city, info);
                 await backend.addInfo(login, infoArray);
-                showMessage(messages.infoAddSuccess, 'green', true);
+                showMessage(messages.infoAddSuccess, 'green');
+            } else {
+                const infoArray = ['', '', '', '', ''];
+                await backend.addInfo(login, infoArray);
+                showMessage(messages.infoAddLater, 'white');
             }
         } else {
-            showMessage(messages.regFail, 'red', false);
+            showMessage(messages.regFail, 'red');
         }
 
         rl.prompt();
     } else {
-        showMessage(messages.loggedIn, 'red', true);
+        showMessage(messages.loggedIn, 'red');
     }
 
 }
 
 async function infoScreen() {
-    if (status) {
-        const infoObject = await backend.getInfo(currentLogin);
-        console.log('\nInformation about your account:');
-        console.table(infoObject);
-    } else {
-        showMessage(messages.notLoggedIn, 'red', false);
-    }
-
-    rl.prompt();
+    const infoObject = await backend.getInfo(currentLogin);
+    console.log('\x1b[1A');
+    showMessage(messages.infoCheck, 'white');
+    console.table(infoObject);
 }
+
+let infoRecursion = 0;
 
 async function editInfoScreen() {
+    const infoObject = await backend.getInfo(currentLogin);
+
+    if(infoRecursion === 0) {
+        console.log('What do you want to cange:\n' +
+        '1 - name\n' +
+        '2 - birth date\n' +
+        '3 - country\n' +
+        '4 - city\n' +
+        '5 - info')
+    }
+
+    const input = await question('[1/2/3/4/5/6]: ');
+
+    let item;
+
+    if (input === ('1' || '2' || '3' || '4' || '5')) {
+        if (input == 1) {
+            item = 'name'
+        } 
+        else if (input == 2) {
+            item = 'birth'
+        }
+        else if (input == 3) {
+            item = 'country'
+        }
+        else if (input == 4) {
+            item = 'city'
+        }
+        else if (input == 5) {
+            item = 'info'
+        };
+        
+        infoObject[item] = await question('New information: ');
+
+        await backend.changeInfo(currentLogin, infoObject);
+
+        showMessage(messages.infoUpdate, 'green');
+
+        infoRecursion = 0;
+    } else {
+        showMessage(messages.invalidInput, 'red');
+        infoRecursion++;
+        await editInfoScreen();
+    }
+
+}
+
+async function accountScreen() {
     if (status) {
-        const infoObject = await backend.getInfo(currentLogin);
-        const item = await question(`What do you want to change: `);
+        const info = await question(`Do you want to see or edit your account? [see/edit]: `);
 
-        if (typeof infoObject[item] !== "undefined") {
-            infoObject[item] = await question('New information: ');
-
-            const values = Object.values(infoObject);
-            values.shift();
-            console.log(values);
-            await backend.addInfo(currentLogin, values);
+        if (info === 'see' || info === 's') {
+            await infoScreen();
+        } else if (info === 'edit' || info === 'e') {
+            await editInfoScreen();
         } else {
-            console.log('invalid input');
+            showMessage(messages.invalidInput, 'red');
+            await accountScreen();
         }
     } else {
-        showMessage(messages.notLoggedIn, 'red', false);
+        showMessage(messages.notLoggedIn, 'red');
     }
 
     rl.prompt();
 }
 
-function messageScreen() {
+async function checkMessage() {
+    const item = await question(`Which messages: `);
+
+    const infoObject = await backend.getMessages(currentLogin, item);
+
+    if(infoObject === undefined) {
+        showMessage(messages.messageNotFound, 'red');
+        checkMessage();
+    } else {
+        const dialog = infoObject.join('\n');
+        console.log(dialog);
+    }
 
 }
 
+async function sendMessage() {
+    const recipient = await question(`For whom: `);
+    const text = await question(`Text: `);
 
+    await backend.addMessage(currentLogin, recipient, text);
+    showMessage(messages.messageSuccess, 'green');
+}
+
+async function messageScreen() {
+    if (status) {
+        const info = await question(`Send a message or check your messages? [send/check]: `);
+
+        if (info === 'send' || info === 's') {
+            await sendMessage();
+        } else if (info === 'check' || info === 'c') {
+            await checkMessage();
+        } else {
+            showMessage(messages.invalidInput, 'red');
+            await messageScreen();
+        }
+    } else {
+        showMessage(messages.notLoggedIn, 'red');
+    }
+
+    rl.prompt();
+}
+
+
+backend.checkDB();
 console.clear();
 showMessage(messages.greeting, 'white', status);
-showMessage(messages.helpComm, 'white', status);
-console.log('\n');
+showMessage(messages.helpComm + '\n', 'cyan', status);
 rl.prompt();
 
 rl.on('line', (line) => {
@@ -207,4 +299,17 @@ rl.on('line', (line) => {
 }).on('close', () => {
     showMessage(messages.bye, 'white', status);
     process.exit(0);
+}).on('SIGINT', () => {});
+
+
+readline.emitKeypressEvents(process.stdin);
+process.stdin.setRawMode(true);
+
+process.stdin.on('keypress', (str, key) => {
+    //console.log(key)
+    if (key.name === 'q' && key.ctrl === true) {
+        loginScreen();
+    } else if (key.name === 'w' && key.ctrl === true) {
+        messageScreen();
+    }
 })
