@@ -165,11 +165,9 @@ async function infoScreen() {
 async function editInfoScreen() {
     const infoObject = await backend.getInfo(currentLogin);
     const item = await question(`What do you want to change: `);
-    console.log(item);
 
     if (typeof infoObject[item] !== "undefined") {
         infoObject[item] = await question('New information: ');
-        console.log(infoObject);
 
         await backend.changeInfo(currentLogin, infoObject);
 
