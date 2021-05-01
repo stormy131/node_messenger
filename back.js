@@ -270,7 +270,7 @@ class Back {
           const index = file.indexOf(login);
           
           if(index === -1){
-            resolve();
+            continue;
           } else {
             const chat = file.filter(user => user !== login);
             result = result.concat(chat);
