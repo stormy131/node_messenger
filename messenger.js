@@ -78,7 +78,7 @@ const messages = {
     notLoggedIn: 'You are not logged in',
     invalidInput: 'Invalid input, please try again:',
     messageSuccess: 'The message was successfully sent',
-    messageNotFound: 'No chats found with such user, try again',
+    messagesNew: 'You don`t have any messages with this user',
     bye: 'Goodbye. Have a good day!'
 }
 
@@ -201,7 +201,7 @@ async function editInfoScreen() {
     const infoObject = await backend.getInfo(currentLogin);
 
     if(infoRecursion === 0) {
-        console.log('What do you want to cange:\n' +
+        console.log('What do you want to change:\n' +
         '1 - name\n' +
         '2 - birth date\n' +
         '3 - country\n' +
@@ -271,7 +271,6 @@ async function accountScreen() {
 }
 
 
-
 async function messageScreen() {
     if (status) {
         const chats = await backend.getChats(currentLogin);
@@ -283,12 +282,11 @@ async function messageScreen() {
             console.log('- ' + chats[i])
         }
 
-        const partner = await question('What chat you need? [name]: ');
+        const partner = await question('Who do you want to write to? [username]: ');
         
         const infoObject = await backend.getMessages(currentLogin, partner);
         if(infoObject === undefined) {
-            showMessage(messages.messageNotFound, 'red');
-            checkMessage();
+            showMessage(messages.messagesNew, 'white');
         } else {
             const dialog = infoObject.join('\n');
             let newDialog = dialog.split(`${partner}`).join(`\u001b[34m${partner}\u001b[37m`);
@@ -296,13 +294,18 @@ async function messageScreen() {
             console.log(newDialog);
         }
 
-        const item = await question('Do you want to write a new message? [y/n]: ');
-        if (item === 'y' || item === 'yes') {
-            const text = await question('New message: ');
-            await backend.addMessage(currentLogin, partner, text);
-            console.log(text);
-        }
+        const text = await question('\u001b[36m(if you want to send file, type "send file")\u001b[37m\nNew message: ');
+        if (text === 'send file') {
+            const file = await question('Enter file path: ');
+            await backend.sendFile(partner, file);
+            await backend.addMessage(currentLogin, partner, `\u001b[35msent file\u001b[37m`)
+        } else if (text === '') {
 
+        } else {
+            await backend.addMessage(currentLogin, partner, text);
+            console.log(`\u001b[35m${currentLogin}\u001b[37m: ${text}`);
+        }
+        
     } else {
         showMessage(messages.notLoggedIn, 'red');
     }
