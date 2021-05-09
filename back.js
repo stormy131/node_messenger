@@ -29,15 +29,19 @@ class Back {
       fs.mkdir('data', err => {
         if (err) {
           fs.readFile('data/authorize', err => {
-            if (err) {
-              fs.writeFile('data/authorize', '', () => {});
-            }
+            if (err) fs.writeFile('data/authorize', '', () => {});
           });
 
           fs.readFile('data/info', err => {
-            if(err){
-              fs.writeFile('data/info', '', () => {});
-            }
+            if(err) fs.writeFile('data/info', '', () => {});
+          });
+
+          fs.readFile('data/friends', err => {
+            if(err) fs.writeFile('data/friends', '', () => {});
+          });
+
+          fs.readFile('data/news', err => {
+            if(err) fs.writeFile('data/news', '', () => {});
           });
 
           fs.mkdir('data/messages', err => {
@@ -51,8 +55,10 @@ class Back {
           return;
         }
 
+        fs.writeFile('data/news', '', () => {});
         fs.writeFile('data/authorize', '', () => {});
         fs.writeFile('data/info', '', () => {});
+        fs.writeFile('data/friends', '', () => {});
         fs.mkdir('data/messages', () => {});
         fs.mkdir('data/dropbox', () => {});
         resolve();
@@ -69,7 +75,7 @@ class Back {
         }
 
         const users = data.toString().split('\n');
-        users.pop();
+        if(users[users.length - 1] === '') users.pop();
         for (let i = 0; i < users.length; i++) {
           const user = users[i].split(' - ');
           if (login === user[0]){
@@ -101,6 +107,7 @@ class Back {
         }
 
         const users = data.toString().split('\n');
+        if(users[users.length - 1] === '') users.pop();
         for (let i = 0; i < users.length; i++) {
           const user = users[i].split(' - ');
           if (login === user[0] && password === user[1]){
@@ -162,7 +169,7 @@ class Back {
         content.pop();
       }
       
-        for(let i = 0; i < content.length; i++){
+      for(let i = 0; i < content.length; i++){
         const user = JSON.parse(content[i]);
         if(user.login === login){
           content[i] = JSON.stringify(newInfo);
@@ -228,6 +235,7 @@ class Back {
       }
 
       const content = data.toString().split('\n');
+      if(content[content.length - 1] === '') content.pop();
       for(let i = 0; i < content.length; i++){
         const account = content[i].split(' - ');
         if(account[0] === login){
@@ -281,6 +289,105 @@ class Back {
       });
     });
   }
+
+  async addNews(login, news){
+    fs.readFile('data/news', err => {
+      if(err){
+        console.log('Check DB');
+        return;
+      }
+
+      fs.appendFile('data/news', login + ': ' + news + '\n', () => {});
+    });
+  }
+
+  getNews(){
+    return new Promise(resolve => {
+      fs.readFile('data/news', (err, data) => {
+        if(err){
+          console.log('Check DB');
+          return;
+        }
+
+        const content  = data.toString().split('\n');
+        if(content[content.length - 1] === ''){
+          content.pop();
+        }
+
+        resolve(content);
+      });
+    });
+  }
+
+  checkFriends(login, friend, users){
+    for(let i = 0; i < users.length; i++){
+      const user = users[i].split(': ');
+      if(user[0] === login){
+        const friends = user[1].split(', ');
+        for(let j = 0; j < friends.length; j++){
+          if(friends[j] === friend) return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  async addFriend(login, friend){
+    fs.readFile('data/friends', async (err, data) => {
+      if(err){
+        console.log('Check DB');
+        return;
+      }
+
+      const content = data.toString().split('\n');
+      if(content[content.length - 1] === '') content.pop();
+      if(this.checkFriends(login, friend, content)) return;
+
+      let flag = true;
+      for(let i = 0; i < content.length; i++){
+        const user = content[i].split(': ');
+        if(user[0] === login){
+          user[1] = user[1] + ', ' + friend;
+          content[i] = user.join(': ');
+          flag = false;
+          fs.writeFile('data/friends', content.join('\n') + '\n', () => {});
+          break;
+        }
+      }
+
+      if(flag) fs.appendFile('data/friends', login + ': ' + friend + '\n', () => {});
+      await this.addFriend(friend, login);
+    });
+  }
+
+  getFriends(login){
+    return new Promise(resolve => {
+      fs.readFile('data/friends', (err, data) => {
+        if(err){
+          console.log('Check DB');
+          resolve();
+          return;
+        }
+
+        const content = data.toString().split('\n');
+        if(content[content.length - 1] === '') content.pop();
+        for(let i = 0; i < content.length; i++){
+          const user = content[i].split(': ');
+          if(user[0] === login){
+            resolve(user[1].split(', '));
+            break; 
+          }
+        }
+      });
+    });
+  }
 }
 
 module.exports = Back;
+
+(async () => {
+  const api = new Back();
+  const a = await api.getFriends('Arrtem');
+  console.log(a);
+})();
