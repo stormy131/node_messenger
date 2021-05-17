@@ -386,8 +386,8 @@ class Back {
 
 module.exports = Back;
 
-(async () => {
-  const api = new Back();
-  const a = await api.getFriends('Arrtem');
-  console.log(a);
-})();
+// (async () => {
+//   const api = new Back();
+//   const a = await api.getFriends('Arrtem');
+//   console.log(a);
+// })();
