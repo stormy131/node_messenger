@@ -17,42 +17,17 @@ let status = false;
 let currentLogin;
 
 const commands = {
-    help() { 
-        commandsList() 
-    },
-    hotkeys() {
-        hotkeysList();
-    },
-    registration() {
-        registrationScreen();
-    },
-    login() {
-        loginScreen();
-    },
-    logout() {
-        logoutScreen();
-    },
-    account() {
-        accountScreen();
-    },
-    friends() {
-        friendsScreen();
-    },
-    messages() {
-        messageScreen();
-    },
-    news() {
-        newsScreen();
-    },
-    notifications() {
-
-    },
-    exit() {
-        rl.close();
-    },
-    test() {
-        testScreen();
-    }
+    help() { commandsList() },
+    hotkeys() { hotkeysList() },
+    registration() { registrationScreen() },
+    login() { loginScreen() },
+    logout() { logoutScreen() },
+    account() { accountScreen() },
+    friends() { friendsScreen() },
+    messages() { messageScreen() },
+    news() { newsScreen() },
+    notifications() { },
+    exit() { rl.close() }
 };
 
 const commandsDescription = {
@@ -66,8 +41,7 @@ const commandsDescription = {
     messages: 'check message history and write new messages',
     news: 'see the latest news from other users',
     notifications: '',
-    exit: 'stop running Node Messanger',
-    test: 'LET`S GOOOOOOOO'
+    exit: 'stop running Node Messanger'
 }
 
 const hotkeysDescription = {
@@ -232,26 +206,27 @@ let infoRecursion = 0;
 async function editInfoScreen() {
     const infoObject = await backend.getInfo(currentLogin);
 
+    const variants = [
+        'name',
+        'birth',
+        'country',
+        'city',
+        'info',
+        'password'
+    ]
+
     if(infoRecursion === 0) {
-        console.log('What do you want to change:\n' +
-        '1 - name\n' +
-        '2 - birth date\n' +
-        '3 - country\n' +
-        '4 - city\n' +
-        '5 - info\n' +
-        '6 - set new password')
+        console.log('What do you want to change:')
+
+        for (let i = 0; i < variants.length; i++) {
+            console.log(`${i+1} - ${variants[i]}`)
+        }
     }
 
     const input = await question('[1/2/3/4/5/6]: ');
 
-    let item;
-
-    if (input === ('1' || '2' || '3' || '4' || '5')) {
-        if (input == 1) {item = 'name'} 
-        else if (input == 2) {item = 'birth'}
-        else if (input == 3) {item = 'country'}
-        else if (input == 4) {item = 'city'}
-        else if (input == 5) {item = 'info'};
+    if ((+input > 0) && (+input < 6)) {
+        const item = variants[+input - 1];
         
         infoObject[item] = await question('New information: ');
 
@@ -259,7 +234,7 @@ async function editInfoScreen() {
 
         showMessage(messages.infoUpdate, 'green');
         infoRecursion = 0;
-    } else if (input === '6') {
+    } else if (+input === 6) {
         const currentPassword = await question('Current password: ');
         const result = await backend.checkAccount(currentLogin, currentPassword);
         if (result) {
@@ -275,6 +250,8 @@ async function editInfoScreen() {
         } else {
             showMessage(messages.passCheckFail, 'red');
         }
+    } else if(input === '') {
+        return;
     } else {
         showMessage(messages.invalidInput, 'red');
         infoRecursion++;
