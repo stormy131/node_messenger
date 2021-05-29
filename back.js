@@ -27,40 +27,52 @@ class Back {
   checkDB() {
     return new Promise(resolve => {
       fs.mkdir('data', err => {
+        const files = ['authorize', 'info', 'friends', 'news'];
+        const dirs = ['messages', 'dropbox'];
+
         if (err) {
-          fs.readFile('data/authorize', err => {
-            if (err) fs.writeFile('data/authorize', '', () => {});
-          });
+          for(let i = 0; i < files.length; i++){
+            fs.readFile('data/' + files[i], err => {
+              if(err){
+                fs.writeFile('data/' + files[i], '', err => {
+                  if(err){
+                    console.log('Problem apeared while creating ' + files[i]);
+                    resolve();
+                    return;
+                  }  
+                });
+              }
+            });
+          }
 
-          fs.readFile('data/info', err => {
-            if(err) fs.writeFile('data/info', '', () => {});
-          });
-
-          fs.readFile('data/friends', err => {
-            if(err) fs.writeFile('data/friends', '', () => {});
-          });
-
-          fs.readFile('data/news', err => {
-            if(err) fs.writeFile('data/news', '', () => {});
-          });
-
-          fs.mkdir('data/messages', err => {
-            if(err) resolve();
-          });
-
-          fs.mkdir('data/dropbox', err => {
-            if(err) resolve();
-          });
+          for(let i = 0; i < dirs.length; i++){
+            fs.mkdir('data/' + dirs[i], err => {
+              if(err) resolve();
+            });
+          }
 
           return;
         }
 
-        fs.writeFile('data/news', '', () => {});
-        fs.writeFile('data/authorize', '', () => {});
-        fs.writeFile('data/info', '', () => {});
-        fs.writeFile('data/friends', '', () => {});
-        fs.mkdir('data/messages', () => {});
-        fs.mkdir('data/dropbox', () => {});
+        for(let i = 0; i < files.length; i++){
+          fs.writeFile('data/' + files[i], '', err => {
+            if(err){
+              console.log('Problem appeared while creating ' + files[i]);
+              resolve();
+              return;
+            }
+          });
+        }
+
+        for(let i = 0; i < dirs.length; i++){
+          fs.mkdir('data/' + dirs[i], err => {
+            if(err){
+              console.log('Problem appeared while creating dir ' + dirs[i]);
+              resolve();
+              return;
+            }
+          });
+        }
         resolve();
       });
     });
@@ -386,8 +398,7 @@ class Back {
 
 module.exports = Back;
 
-// (async () => {
-//   const api = new Back();
-//   const a = await api.getFriends('Arrtem');
-//   console.log(a);
-// })();
+(async () => {
+  const back = new Back();
+  await back.checkDB();
+})();
