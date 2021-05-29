@@ -106,3 +106,4 @@ dist
 .idea
 examples.js
 data
+storage.json
