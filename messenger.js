@@ -1,5 +1,6 @@
 'use strict'
 
+//const fs = require('fs');
 const { setegid } = require('process');
 const readline = require('readline');
 
@@ -17,17 +18,17 @@ let status = false;
 let currentLogin;
 
 const commands = {
-    help() { commandsList() },
-    hotkeys() { hotkeysList() },
-    registration() { registrationScreen() },
-    login() { loginScreen() },
-    logout() { logoutScreen() },
-    account() { accountScreen() },
-    friends() { friendsScreen() },
-    messages() { messageScreen() },
-    news() { newsScreen() },
-    notifications() { },
-    exit() { rl.close() }
+    help() {commandsList()},
+    hotkeys() {hotkeysList()},
+    registration() {registrationScreen()},
+    login() {loginScreen()},
+    logout() {logoutScreen()},
+    account() {accountScreen()},
+    friends() {friendsScreen()},
+    messages() {messageScreen()},
+    news() {newsScreen()},
+    notifications() {},
+    exit() {rl.close()}
 };
 
 const commandsDescription = {
@@ -79,26 +80,34 @@ const messages = {
     bye: 'Goodbye. Have a good day!'
 }
 
-function showMessage(text, color, state) {
-    let index;
-
-    if (color === 'white') {
-        index = '\u001b[37m'
-    } else if (color === 'red') {
-        index = '\u001b[31m';
-    } else if (color === 'green') {
-        index = '\u001b[32m';
-    } else if (color === 'cyan') {
-        index = '\u001b[36m';
-    }
-
-    console.log(`${index}${text}\u001b[37m`);
-
-    if (state === true || state === false) {
-        status = state;
-    }
+const colors = {
+    white: '\u001b[37m',
+    red: '\u001b[31m',
+    green: '\u001b[32m',
+    cyan: '\u001b[36m'
 }
 
+const profileInfo = [
+    'name',
+    'birth',
+    'country',
+    'city',
+    'info',
+    'password'
+]
+
+const registrationQuestions = [
+    'What is your name? ',
+    'How old are you? ',
+    'What country are you from? ',
+    'In which city of do you live? ',
+    'You can add some extra info about yourself: '
+]
+
+function showMessage(text, color) {
+    let index = colors[color];
+    console.log(`${index}${text}\u001b[37m`);
+}
 
 function commandsList() {
     const commandsKeys = Object.keys(commands);
@@ -125,71 +134,72 @@ function question(str) {
 }
 
 async function loginScreen() {
-    if (!status) {
-        const login = await question(`Login: `);
-        const password = await question(`Password: `);
-
-        const bool = await backend.checkAccount(login, password);
-
-        if (bool) {
-            showMessage(messages.logSuccess, 'green', true);
-            currentLogin = login;
-        } else {
-            showMessage(messages.logFail, 'red');
-        }
-
-        rl.prompt();
-    } else {
+    if (status) {
         showMessage(messages.loggedIn, 'red');
+        return;
     }
 
+    const login = await question(`Login: `);
+    const password = await question(`Password: `);
+
+    const bool = await backend.checkAccount(login, password);
+
+    if (bool) {
+        showMessage(messages.logSuccess, 'green');
+        status = true;
+        currentLogin = login;
+    } else {
+        showMessage(messages.logFail, 'red');
+    }
+
+    rl.prompt();
 }
 
 function logoutScreen() {
     if (status) {
-        showMessage(messages.logoutSuccess, 'green', false);
+        showMessage(messages.logoutSuccess, 'green');
+        status = false;
     } else {
         showMessage(messages.logoutFail, 'red');
     }
 }
 
 async function registrationScreen() {
-    if (!status) {
-        const login = await question(`Create a login: `);
-        const password = await question(`Pick a password: `);
-
-        const bool = await backend.createAccount(login, password);
-
-        if (bool) {
-            showMessage(messages.regSuccess, 'green', true);
-            currentLogin = login;
-
-            const additional = await question('Would you like to add some extra info to your profile? [y/n]: ')
-            if (additional === 'y' || additional === 'yes') {
-                const name = await question(`What is your name? `);
-                const age = await question(`How old are you? `);
-                const country = await question(`What country are you from? `);
-                const city = await question(`In which city of ${country} do you live? `);
-                const info = await question('You can add some extra info about yourself: ');
-
-                const infoArray = [];
-                infoArray.push(name, age, country, city, info);
-                await backend.addInfo(login, infoArray);
-                showMessage(messages.infoAddSuccess, 'green');
-            } else {
-                const infoArray = ['', '', '', '', ''];
-                await backend.addInfo(login, infoArray);
-                showMessage(messages.infoAddLater, 'white');
-            }
-        } else {
-            showMessage(messages.regFail, 'red');
-        }
-
-        rl.prompt();
-    } else {
+    if (status) {
         showMessage(messages.loggedIn, 'red');
+        return
     }
 
+    const login = await question(`Create a login: `);
+    const password = await question(`Pick a password: `);
+
+    const bool = await backend.createAccount(login, password);
+
+    if (bool) {
+        showMessage(messages.regSuccess, 'green');
+        status = true;
+        currentLogin = login;
+
+        const additional = await question('Would you like to add some extra info to your profile? [y/n]: ')
+        if (additional === 'y' || additional === 'yes') {
+            const infoArray = [];
+            for (let i = 0; i < 5; i++) {
+                let answer = await question(`${registrationQuestions[i]}`);
+                infoArray.push(answer);
+            }
+
+            await backend.addInfo(login, infoArray);
+            showMessage(messages.infoAddSuccess, 'green');
+        } else {
+            const infoArray = ['', '', '', '', ''];
+            await backend.addInfo(login, infoArray);
+            showMessage(messages.infoAddLater, 'white');
+        }
+    } else {
+        showMessage(messages.regFail, 'red');
+    }
+
+    rl.prompt();
 }
 
 async function infoScreen() {
@@ -206,27 +216,18 @@ let infoRecursion = 0;
 async function editInfoScreen() {
     const infoObject = await backend.getInfo(currentLogin);
 
-    const variants = [
-        'name',
-        'birth',
-        'country',
-        'city',
-        'info',
-        'password'
-    ]
-
     if(infoRecursion === 0) {
         console.log('What do you want to change:')
 
-        for (let i = 0; i < variants.length; i++) {
-            console.log(`${i+1} - ${variants[i]}`)
+        for (let i = 0; i < profileInfo.length; i++) {
+            console.log(`${i+1} - ${profileInfo[i]}`)
         }
     }
 
     const input = await question('[1/2/3/4/5/6]: ');
 
     if ((+input > 0) && (+input < 6)) {
-        const item = variants[+input - 1];
+        const item = profileInfo[+input - 1];
         
         infoObject[item] = await question('New information: ');
 
@@ -261,42 +262,43 @@ async function editInfoScreen() {
 }
 
 async function accountScreen() {
-    if (status) {
-        const info = await question(`Do you want to see or edit your account? [see/edit]: `);
-
-        if (info === 'see' || info === 's') {
-            await infoScreen();
-        } else if (info === 'edit' || info === 'e') {
-            await editInfoScreen();
-        } else {
-            showMessage(messages.invalidInput, 'red');
-            await accountScreen();
-        }
-    } else {
+    if (!status) {
         showMessage(messages.notLoggedIn, 'red');
+    }
+
+    const info = await question(`Do you want to see or edit your account? [see/edit]: `);
+
+    if (info === 'see' || info === 's') {
+        await infoScreen();
+    } else if (info === 'edit' || info === 'e') {
+        await editInfoScreen();
+    } else {
+        showMessage(messages.invalidInput, 'red');
+        await accountScreen();
     }
 
     rl.prompt();
 }
 
 async function friendsScreen() {
-    if (status) {
-        const friendList = await backend.getFriends(currentLogin);
-
-        console.log('\x1b[1A');
-        console.log('Your friends:');
-
-        for (let i = 0; i < friendList.length; i++) {
-            console.log(`${i+1}. ` + friendList[i]);
-        }
-
-        const add = await question('Do you want to add a new friend? [y/n]: ');
-        if (add === 'y' || add === 'yes') {
-            const newFriend = await question('Enter username: ');
-            await backend.addFriend(currentLogin, newFriend);
-        }
-    } else {
+    if (!status) {
         showMessage(messages.notLoggedIn, 'red');
+        return
+    }
+
+    const friendList = await backend.getFriends(currentLogin);
+
+    console.log('\x1b[1A');
+    console.log('Your friends:');
+
+    for (let i = 0; i < friendList.length; i++) {
+        console.log(`${i+1}. ` + friendList[i]);
+    }
+
+    const add = await question('Do you want to add a new friend? [y/n]: ');
+    if (add === 'y' || add === 'yes') {
+        const newFriend = await question('Enter username: ');
+        await backend.addFriend(currentLogin, newFriend);
     }
 
     rl.prompt();
@@ -321,69 +323,68 @@ async function writeMessage() {
         const file = await question('Enter file path: ');
         await backend.sendFile(partner, file);
         await backend.addMessage(currentLogin, partner, `\u001b[35msent file\u001b[37m`)
-    } else if (text === '') {
-
-    } else {
+    } else if (text !== '') { 
         await backend.addMessage(currentLogin, partner, text);
         console.log(`\u001b[35m${currentLogin}\u001b[37m: ${text}`);
     }
 }
 
 async function messageScreen() {
-    if (status) {
-        const chats = await backend.getChats(currentLogin);
-        const friends = await backend.getFriends(currentLogin);
-
-        const difference = (s1, s2) => new Set(
-            [...s1].filter(v => !s2.has(v))
-        );
-
-        const dif1 = new Set(friends);
-        const dif2 = new Set(chats);
-    
-        const resArr = Array.from(difference(dif1, dif2));
-
-        console.log('\x1b[1A');
-        console.log('Available chats:')
-
-        for (let i = 0; i < chats.length; i++) {
-            console.log('- ' + chats[i])
-        }
-    
-        console.log('\x1b[1A');
-        console.log('Friends you have no chats with:')
-    
-        for (let i = 0; i < resArr.length; i++) {
-            console.log('- ' + resArr[i]);
-        }
-
-        await writeMessage();
-        
-    } else {
+    if (!status) {
         showMessage(messages.notLoggedIn, 'red');
+        return
     }
+
+    const chats = await backend.getChats(currentLogin);
+    const friends = await backend.getFriends(currentLogin);
+
+    const difference = (s1, s2) => new Set(
+        [...s1].filter(v => !s2.has(v))
+    );
+
+    const dif1 = new Set(friends);
+    const dif2 = new Set(chats);
+
+    const resArr = Array.from(difference(dif1, dif2));
+
+    console.log('\x1b[1A');
+    console.log('Available chats:')
+
+    for (let i = 0; i < chats.length; i++) {
+        console.log('- ' + chats[i])
+    }
+
+    console.log('\x1b[1A');
+    console.log('Friends you have no chats with:')
+
+    for (let i = 0; i < resArr.length; i++) {
+        console.log('- ' + resArr[i]);
+    }
+
+    await writeMessage();
 
     rl.prompt();
 }
 
 async function newsScreen() {
-    if (status) {
-        const news = await backend.getNews();
-
-        console.log('\x1b[1A');
-        console.log('Latest news:')
-
-        for (let i = 0; i < news.length; i++) {
-            console.log(news[i]);
-        }
-
-        const add = await question('Do you want to post something? [y/n]: ');
-        if (add === 'y' || add === 'yes') {
-            const news = await question('Enter text: ');
-            await backend.addNews(currentLogin, news);
-        }
-    } else {
+    if (!status) {
         showMessage(messages.notLoggedIn, 'red');
+        return
+    }
+
+    const news = await backend.getNews();
+
+    console.log('\x1b[1A');
+    console.log('Latest news:')
+
+    for (let i = 0; i < news.length; i++) {
+        console.log(news[i]);
+    }
+
+    const add = await question('Do you want to post something? [y/n]: ');
+    if (add === 'y' || add === 'yes') {
+        const news = await question('Enter text: ');
+        await backend.addNews(currentLogin, news);
     }
 
     rl.prompt();
@@ -392,8 +393,8 @@ async function newsScreen() {
 
 backend.checkDB();
 console.clear();
-showMessage(messages.greeting, 'white', status);
-showMessage(messages.helpComm + '\n', 'cyan', status);
+showMessage(messages.greeting, 'white');
+showMessage(messages.helpComm + '\n', 'cyan');
 rl.prompt();
 
 rl.on('line', (line) => {
@@ -402,11 +403,11 @@ rl.on('line', (line) => {
     if (command) {
         command();
     } else {
-        showMessage(messages.unknown, 'red', status);
+        showMessage(messages.unknown, 'red');
     }
     rl.prompt();
 }).on('close', () => {
-    showMessage(messages.bye, 'white', status);
+    showMessage(messages.bye, 'white');
     process.exit(0);
 }).on('SIGINT', () => {});
 
@@ -416,15 +417,16 @@ process.stdin.setRawMode(true);
 
 process.stdin.on('keypress', (str, key) => {
     //console.log(key)
-    if (key.name === 'q' && key.ctrl === true) {
-        commands.login();
-    } else if (key.name === 'w' && key.ctrl === true) {
-        commands.account();
-    } else if (key.name === 'e' && key.ctrl === true) {
-        commands.messages();
-    } else if (key.name === 'r' && key.ctrl === true) {
-        commands.news();
-    } else if (key.name === 't' && key.ctrl === true) {
-        commands.notifications();
-    }
+
+    // if (key.name === 'q' && key.ctrl) {
+    //     commands.login();
+    // } else if (key.name === 'w' && key.ctrl) {
+    //     commands.account();
+    // } else if (key.name === 'e' && key.ctrl) {
+    //     commands.messages();
+    // } else if (key.name === 'r' && key.ctrl) {
+    //     commands.news();
+    // } else if (key.name === 't' && key.ctrl) {
+    //     commands.notifications();
+    // }
 })
