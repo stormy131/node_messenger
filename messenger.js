@@ -1,12 +1,11 @@
 'use strict'
 
-//const fs = require('fs');
+const fs = require('fs');
 const { setegid } = require('process');
 const readline = require('readline');
 
-const back = require('./back.js');
-
-const backend = new back;
+const Back = require('./back.js');
+const backend = new Back;
 
 const rl = readline.createInterface({
     input: process.stdin,
@@ -14,12 +13,13 @@ const rl = readline.createInterface({
     prompt: '> '
 });
 
+let storage;
 let status = false;
 let currentLogin;
 
 const commands = {
-    help() {commandsList()},
-    hotkeys() {hotkeysList()},
+    help() {list(storage.commandsDescription)},
+    hotkeys() {list(storage.hotkeysDescription)},
     registration() {registrationScreen()},
     login() {loginScreen()},
     logout() {logoutScreen()},
@@ -31,125 +31,55 @@ const commands = {
     exit() {rl.close()}
 };
 
-const commandsDescription = {
-    help: 'see the full commands list',
-    hotkeys: 'see the full hotckeys list',
-    registration: 'create a new account (new login and password)',
-    login: 'sign in to an existing account (login and password required)',
-    logout: 'sign out from an account',
-    account: 'get or set information about your account',
-    friends: 'check your friend list and add new friends',
-    messages: 'check message history and write new messages',
-    news: 'see the latest news from other users',
-    notifications: '',
-    exit: 'stop running Node Messanger'
+async function init() {
+    await backend.createDB();
+    storage = await backend.getFrontStorage();
 }
 
-const hotkeysDescription = {
-    login: 'Ctrl + q',
-    account: 'Ctrl + w',
-    messages: 'Ctrl + e',
-    news: 'Ctrl + r',
-    notifications: 'Ctrl + t'
+async function showMessage(text, color) {
+    let index = storage.colors[color];
+    console.log(index + storage.messages[text] + storage.colors.white);
 }
 
-const messages = {
-    greeting: 'Welcome to Node Messenger (° ͜ʖ͡°)╭∩╮',
-    unknown: 'Unknown command',
-    helpComm: 'type "help" to see the command list',
-    logComm: 'type "login" for login',
-    regComm: 'type "registration" for registration',
-    logFail: 'Authorization failed',
-    logSuccess: 'You are successfully logged in',
-    logoutFail: 'You are not logged in',
-    logoutSuccess: 'You have logged out',
-    regFail: 'Registration failed',
-    regSuccess: 'Your account has been successfully created',
-    infoAddSuccess: 'Information successfully added',
-    infoAddLater: 'You can always add information later',
-    infoCheck: 'Information about your account:',
-    infoUpdate: 'Information was updated successfully',
-    passCheckFail: 'Password is incorrect',
-    passChangeSuccess: 'Password was successfully changed',
-    passChangeFail: 'Password mismatch',
-    loggedIn: 'You are logged in',
-    notLoggedIn: 'You are not logged in',
-    invalidInput: 'Invalid input, please try again:',
-    messageSuccess: 'The message was successfully sent',
-    messagesNew: 'You don`t have any messages with this user',
-    bye: 'Goodbye. Have a good day!'
-}
-
-const colors = {
-    white: '\u001b[37m',
-    red: '\u001b[31m',
-    green: '\u001b[32m',
-    cyan: '\u001b[36m'
-}
-
-const profileInfo = [
-    'name',
-    'birth',
-    'country',
-    'city',
-    'info',
-    'password'
-]
-
-const registrationQuestions = [
-    'What is your name? ',
-    'How old are you? ',
-    'What country are you from? ',
-    'In which city of do you live? ',
-    'You can add some extra info about yourself: '
-]
-
-function showMessage(text, color) {
-    let index = colors[color];
-    console.log(`${index}${text}\u001b[37m`);
-}
-
-function commandsList() {
-    const commandsKeys = Object.keys(commands);
-    const commandsValues = Object.values(commandsDescription);
-
-    for (let i = 0; i < commandsKeys.length; i++) {
-        console.log('\u001b[36m' + commandsKeys[i] + '\u001b[37m: ' + commandsValues[i]);
+async function checkInput(input, arg1, arg2, res1, res2) {
+    if (input === arg1 || input === arg1[0]) {
+        await res1();
+    } else if (input === arg2 || input === arg2[0]) {
+        await res2();
+    } else {
+        showMessage('invalidInput', 'red');
     }
 }
 
-function hotkeysList() {
-    const hotkeysKeys = Object.keys(hotkeysDescription);
-    const hotkeysValues = Object.values(hotkeysDescription);
-
-    for (let i = 0; i < hotkeysKeys.length; i++) {
-        console.log('\u001b[36m' + hotkeysValues[i] + '\u001b[37m: ' + hotkeysKeys[i]);
+function list(object) {
+    for (const [key, value] of Object.entries(object)) {
+        console.log('\u001b[36m' + key + '\u001b[37m: ' + value);
     }
 }
 
 function question(str) {
     return new Promise(resolve => {
-        rl.question(str, resolve)
+        rl.question(storage.questions[str], resolve);
     });
 }
 
 async function loginScreen() {
     if (status) {
-        showMessage(messages.loggedIn, 'red');
+        showMessage('loggedIn', 'red');
         return;
     }
 
-    const login = await question(`Login: `);
-    const password = await question(`Password: `);
+    const login = await question('login');
+    const password = await question('password');
 
-    const bool = await backend.checkAccount(login, password);
+    const check = await backend.checkAccount(login, password);
 
-    if (bool) {
-        showMessage(messages.logSuccess, 'green');
+    if (check) {
+        showMessage('logSuccess', 'green');
         status = true;
         currentLogin = login;
     } else {
-        showMessage(messages.logFail, 'red');
+        showMessage('logFail', 'red');
     }
 
     rl.prompt();
@@ -157,147 +87,145 @@ async function loginScreen() {
 
 function logoutScreen() {
     if (status) {
-        showMessage(messages.logoutSuccess, 'green');
+        showMessage('logoutSuccess', 'green');
         status = false;
     } else {
-        showMessage(messages.logoutFail, 'red');
+        showMessage('logoutFail', 'red');
+    }
+}
+
+async function infoAdd() {
+    const additional = await question('addInfo');
+
+    if (additional === 'y' || additional === 'yes') {
+        const infoArray = [];
+        for (let i = 0; i < storage.registrationQuestions.length; i++) {
+            let answer = await new Promise(resolve => {
+                rl.question(storage.registrationQuestions[i], resolve);
+            });
+            infoArray.push(answer);
+        }
+        await backend.addInfo(currentLogin, infoArray);
+        showMessage('infoAddSuccess', 'green');
+    } else {
+        const infoArray = ['', '', '', '', ''];
+        await backend.addInfo(currentLogin, infoArray);
+        showMessage('infoAddLater', 'cyan');
     }
 }
 
 async function registrationScreen() {
     if (status) {
-        showMessage(messages.loggedIn, 'red');
-        return
+        showMessage('loggedIn', 'red');
+        return;
     }
 
-    const login = await question(`Create a login: `);
-    const password = await question(`Pick a password: `);
+    const login = await question('loginCreate');
+    const password = await question('passwordCreate');
 
-    const bool = await backend.createAccount(login, password);
+    const check = await backend.createAccount(login, password);
 
-    if (bool) {
-        showMessage(messages.regSuccess, 'green');
+    if (check) {
+        showMessage('regSuccess', 'green');
         status = true;
         currentLogin = login;
-
-        const additional = await question('Would you like to add some extra info to your profile? [y/n]: ')
-        if (additional === 'y' || additional === 'yes') {
-            const infoArray = [];
-            for (let i = 0; i < 5; i++) {
-                let answer = await question(`${registrationQuestions[i]}`);
-                infoArray.push(answer);
-            }
-
-            await backend.addInfo(login, infoArray);
-            showMessage(messages.infoAddSuccess, 'green');
-        } else {
-            const infoArray = ['', '', '', '', ''];
-            await backend.addInfo(login, infoArray);
-            showMessage(messages.infoAddLater, 'white');
-        }
+        await infoAdd();        
     } else {
-        showMessage(messages.regFail, 'red');
+        showMessage('regFail', 'red');
     }
 
     rl.prompt();
 }
 
-async function infoScreen() {
+async function changeInfo(num) {
     const infoObject = await backend.getInfo(currentLogin);
-    console.log('\x1b[1A');
-    showMessage(messages.infoCheck, 'white');
-    console.log('\u001b[0m' + '\x1b[1A');
-    console.table(infoObject);
-    console.log('\u001b[37m' + '\x1b[1A');
+
+    const item = storage.profileInfo[num - 1];
+    infoObject[item] = await question('newInfo');
+    await backend.changeInfo(currentLogin, infoObject);
+
+    showMessage('infoUpdate', 'green');
 }
 
-let infoRecursion = 0;
+async function changePassword() {
+    const currentPassword = await question('currentPass');
+    const result = await backend.checkAccount(currentLogin, currentPassword);
 
-async function editInfoScreen() {
+    if (result) {
+        const newPassword = await question('newPass');
+        const newPasswordRepeat = await question('repeatPass');
+
+        if (newPassword === newPasswordRepeat) {
+            await backend.changePassword(currentLogin, newPassword);
+            showMessage('passChangeSuccess', 'green');
+        } else {
+            showMessage('passChangeFail', 'red');
+        }
+    } else {
+        showMessage('passCheckFail', 'red');
+    }
+}
+
+async function editAccount() {
+    showMessage('whatChange', 'white');
+    for (let i = 0; i < storage.profileInfo.length; i++) {
+        console.log(`${i+1} - ${storage.profileInfo[i]}`);
+    }
+
+    const input = parseInt(await question('options'));
+
+    if (!storage.profileInfo[input - 1]) {
+        showMessage('invalidInput', 'red');
+        return;
+    }
+
+    if (input < storage.profileInfo.length) {
+        await changeInfo(input);
+    } else {
+        await changePassword();
+    } 
+}
+
+async function showAccount() {
     const infoObject = await backend.getInfo(currentLogin);
 
-    if(infoRecursion === 0) {
-        console.log('What do you want to change:')
-
-        for (let i = 0; i < profileInfo.length; i++) {
-            console.log(`${i+1} - ${profileInfo[i]}`)
-        }
-    }
-
-    const input = await question('[1/2/3/4/5/6]: ');
-
-    if ((+input > 0) && (+input < 6)) {
-        const item = profileInfo[+input - 1];
-        
-        infoObject[item] = await question('New information: ');
-
-        await backend.changeInfo(currentLogin, infoObject);
-
-        showMessage(messages.infoUpdate, 'green');
-        infoRecursion = 0;
-    } else if (+input === 6) {
-        const currentPassword = await question('Current password: ');
-        const result = await backend.checkAccount(currentLogin, currentPassword);
-        if (result) {
-            const newPasswordFirst = await question('Enter new password: ');
-            const newPasswordSecond = await question('Repeat new password: ');
-
-            if (newPasswordFirst === newPasswordSecond) {
-                await backend.changePassword(currentLogin, newPasswordFirst);
-                showMessage(messages.passChangeSuccess, 'green');
-            } else {
-                showMessage(messages.passChangeFail, 'red');
-            }
-        } else {
-            showMessage(messages.passCheckFail, 'red');
-        }
-    } else if(input === '') {
-        return;
-    } else {
-        showMessage(messages.invalidInput, 'red');
-        infoRecursion++;
-        await editInfoScreen();
-    }
-
+    showMessage('infoCheck', 'white');
+    console.log('\u001b[0m' + '\x1b[1A');
+    console.table(infoObject);
 }
 
 async function accountScreen() {
     if (!status) {
-        showMessage(messages.notLoggedIn, 'red');
+        showMessage('notLoggedIn', 'red');
+        return;
     }
 
-    const info = await question(`Do you want to see or edit your account? [see/edit]: `);
-
-    if (info === 'see' || info === 's') {
-        await infoScreen();
-    } else if (info === 'edit' || info === 'e') {
-        await editInfoScreen();
-    } else {
-        showMessage(messages.invalidInput, 'red');
-        await accountScreen();
-    }
+    const info = await question('seeEdit');
+    await checkInput(info, 'see', 'edit', showAccount, editAccount);
 
     rl.prompt();
 }
 
+async function checkAccount() {
+    const name = await question('friendName');
+}
+
 async function friendsScreen() {
     if (!status) {
-        showMessage(messages.notLoggedIn, 'red');
-        return
+        showMessage('notLoggedIn', 'red');
+        return;
     }
 
     const friendList = await backend.getFriends(currentLogin);
 
-    console.log('\x1b[1A');
-    console.log('Your friends:');
-
+    console.log('\n\x1b[1A' + 'Your friends:');
     for (let i = 0; i < friendList.length; i++) {
         console.log(`${i+1}. ` + friendList[i]);
     }
 
-    const add = await question('Do you want to add a new friend? [y/n]: ');
+    const add = await question('addFriend');
     if (add === 'y' || add === 'yes') {
-        const newFriend = await question('Enter username: ');
+        const newFriend = await question('username');
         await backend.addFriend(currentLogin, newFriend);
     }
 
@@ -305,34 +233,38 @@ async function friendsScreen() {
 }
 
 async function writeMessage() {
-    const partner = await question('Who do you want to write to? [username]: ');
+    const partner = await question('writeMess');
     if (partner === '') return;
         
-    const infoObject = await backend.getMessages(currentLogin, partner);
-    if(infoObject === undefined) {
-        showMessage(messages.messagesNew, 'white');
+    const messObject = await backend.getMessages(currentLogin, partner);
+    if(messObject === undefined) {
+        showMessage('messagesNew', 'white');
     } else {
-        const dialog = infoObject.join('\n');
-        let newDialog = dialog.split(`${partner}`).join(`\u001b[34m${partner}\u001b[37m`);
-        newDialog = newDialog.split(`${currentLogin}`).join(`\u001b[35m${currentLogin}\u001b[37m`);
-        console.log(newDialog);
+        const dialog = messObject.join('\n')
+            .split(partner)
+            .join(storage.colors.blue + partner + storage.colors.white)
+            .split(currentLogin)
+            .join(storage.colors.magenta + currentLogin + storage.colors.white);
+        console.log(dialog);
     }
 
-    const text = await question('\u001b[36m(if you want to send file, type "send file")\u001b[37m\nNew message: ');
+    showMessage('sendFile', 'cyan');
+    const text = await question('newMess');
+
     if (text === 'send file') {
-        const file = await question('Enter file path: ');
+        const file = await question('filePath');
         await backend.sendFile(partner, file);
-        await backend.addMessage(currentLogin, partner, `\u001b[35msent file\u001b[37m`)
+        await backend.addMessage(currentLogin, partner, '([sent file])');
     } else if (text !== '') { 
         await backend.addMessage(currentLogin, partner, text);
-        console.log(`\u001b[35m${currentLogin}\u001b[37m: ${text}`);
+        console.log(storage.colors.magenta + currentLogin + storage.colors.white + ': ' + text);
     }
 }
 
 async function messageScreen() {
     if (!status) {
-        showMessage(messages.notLoggedIn, 'red');
-        return
+        showMessage('notLoggedIn', 'red');
+        return;
     }
 
     const chats = await backend.getChats(currentLogin);
@@ -347,16 +279,12 @@ async function messageScreen() {
 
     const resArr = Array.from(difference(dif1, dif2));
 
-    console.log('\x1b[1A');
-    console.log('Available chats:')
-
+    console.log('\n\x1b[1A' + 'Available chats:');
     for (let i = 0; i < chats.length; i++) {
-        console.log('- ' + chats[i])
+        console.log('- ' + chats[i]);
     }
 
-    console.log('\x1b[1A');
-    console.log('Friends you have no chats with:')
-
+    console.log('\n\x1b[1A' + 'Friends you have no chats with:');
     for (let i = 0; i < resArr.length; i++) {
         console.log('- ' + resArr[i]);
     }
@@ -368,22 +296,20 @@ async function messageScreen() {
 
 async function newsScreen() {
     if (!status) {
-        showMessage(messages.notLoggedIn, 'red');
-        return
+        showMessage('notLoggedIn', 'red');
+        return;
     }
 
     const news = await backend.getNews();
 
-    console.log('\x1b[1A');
-    console.log('Latest news:')
-
+    console.log('\n\x1b[1A' + 'Latest news:');
     for (let i = 0; i < news.length; i++) {
         console.log(news[i]);
     }
 
-    const add = await question('Do you want to post something? [y/n]: ');
+    const add = await question('postSmth');
     if (add === 'y' || add === 'yes') {
-        const news = await question('Enter text: ');
+        const news = await question('newPost');
         await backend.addNews(currentLogin, news);
     }
 
@@ -391,11 +317,13 @@ async function newsScreen() {
 }
 
 
-backend.checkDB();
-console.clear();
-showMessage(messages.greeting, 'white');
-showMessage(messages.helpComm + '\n', 'cyan');
-rl.prompt();
+(async () => {
+    await init();
+    console.clear();
+    showMessage('greeting', 'white');
+    showMessage('helpComm', 'cyan');
+    rl.prompt();
+})();
 
 rl.on('line', (line) => {
     line = line.trim();
@@ -403,11 +331,11 @@ rl.on('line', (line) => {
     if (command) {
         command();
     } else {
-        showMessage(messages.unknown, 'red');
+        showMessage('unknown', 'red');
     }
     rl.prompt();
 }).on('close', () => {
-    showMessage(messages.bye, 'white');
+    showMessage('bye', 'white');
     process.exit(0);
 }).on('SIGINT', () => {});
 
