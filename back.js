@@ -21,99 +21,92 @@ class Account {
 
 class Back {
 
-  // TODO IN FRONT:
-  // FIRSTLY, NEED TO CHECK/CREATE DATABASE IN DIRECTORY OF PROJECT
+  checkError(err) {
+    if (err) throw err;
+  }
 
-  checkDB() {
+  getFrontStorage(){
     return new Promise(resolve => {
-      fs.mkdir('data', err => {
-        if (err) {
-          fs.readFile('data/authorize', err => {
-            if (err) fs.writeFile('data/authorize', '', () => {});
-          });
+      fs.readFile('storage.json', (err, data) => {
+        this.checkError(err);
 
-          fs.readFile('data/info', err => {
-            if(err) fs.writeFile('data/info', '', () => {});
-          });
-
-          fs.readFile('data/friends', err => {
-            if(err) fs.writeFile('data/friends', '', () => {});
-          });
-
-          fs.readFile('data/news', err => {
-            if(err) fs.writeFile('data/news', '', () => {});
-          });
-
-          fs.mkdir('data/messages', err => {
-            if(err) resolve();
-          });
-
-          fs.mkdir('data/dropbox', err => {
-            if(err) resolve();
-          });
-
-          return;
-        }
-
-        fs.writeFile('data/news', '', () => {});
-        fs.writeFile('data/authorize', '', () => {});
-        fs.writeFile('data/info', '', () => {});
-        fs.writeFile('data/friends', '', () => {});
-        fs.mkdir('data/messages', () => {});
-        fs.mkdir('data/dropbox', () => {});
-        resolve();
+        const storage = JSON.parse(data);
+        resolve(storage);
       });
     });
   }
 
-  createAccount(login, password){ 
-    return new Promise((resolve, reject) => {
-      fs.readFile('data/authorize', (err, data) => {
-        if (err){
-          console.log('CHECK YOUR DB!');
-          throw err;
+  // TODO IN FRONT:
+  // FIRSTLY, NEED TO CHECK/CREATE DATABASE IN DIRECTORY OF PROJECT
+
+  createDB() {
+    const files = ['authorize', 'info', 'friends', 'news'];
+    const dirs = ['messages', 'dropbox'];
+    
+    return new Promise(resolve => {
+      fs.access('data', err => {
+        if(err){
+          fs.mkdir('data', err => this.checkError(err));
         }
+      });
+
+      for(let file of files){
+        fs.access('data/' + file, err => {
+          if(err){
+            fs.writeFile('data/' + file, '', err => this.checkError(err));
+          }
+        });
+      }
+
+      for(let dir of dirs){
+        fs.access('data/' + dir, err => {
+          if(err){
+            fs.mkdir('data/' + dir, err => this.checkError(err));
+          }
+        });
+      }
+
+      resolve();
+    });
+  }
+
+  createAccount(login, password) {
+    return new Promise(resolve => {
+      fs.readFile('data/authorize', (err, data) => {
+        this.checkError(err);
 
         const users = data.toString().split('\n');
-        if(users[users.length - 1] === '') users.pop();
+        if (users[users.length - 1] === '') users.pop();
         for (let i = 0; i < users.length; i++) {
           const user = users[i].split(' - ');
-          if (login === user[0]){
+          if (login === user[0]) {
             console.log('LOGIN IS ALREADY USED');
             resolve(false);
             return;
           }
         }
 
-        fs.appendFile('data/authorize', login + ' - ' + password + '\n', err => {
-          if (err){
-            console.log('SMTH WENT WRONG WHILE APPENDING DATA');
-            reject();
-          }
-
-          resolve(true);
-        });
+        fs.appendFile('data/authorize',
+          login + ' - ' + password + '\n', err => {
+            resolve(true);
+            this.checkError(err);
+          });
       });
     });
   }
 
-  checkAccount(login, password){ 
-    return new Promise( resolve => {
+  checkAccount(login, password) {
+    return new Promise(resolve => {
       fs.readFile('data/authorize', (err, data) => {
-        if (err){
-          console.log('CHECK DB');
-          resolve();
-          return
-        }
+        this.checkError(err);
 
         const users = data.toString().split('\n');
-        if(users[users.length - 1] === '') users.pop();
+        if (users[users.length - 1] === '') users.pop();
         for (let i = 0; i < users.length; i++) {
           const user = users[i].split(' - ');
-          if (login === user[0] && password === user[1]){
-            //console.log('ACC EXISTS');
+          if (login === user[0] && password === user[1]) {
             resolve(true);
-            return
+            return;
           }
         }
 
@@ -125,26 +118,20 @@ class Back {
 
   // INFO-ARRAY INTERFACE: [FULL NAME, BIRTH, COUNTRY, CITY, INFO]
 
-  async addInfo(login, info){
+  async addInfo(login, info) {
     const user = new Account(login, ...info);
     fs.appendFile('data/info', JSON.stringify(user) + '\n', err => {
-      if (err) {
-        console.log('SMTH went wrong while appending data');
-        return;
-      }
+      this.checkError(err);
     });
   }
 
-  getInfo(login){
+  getInfo(login) {
     return new Promise(resolve => {
       fs.readFile('data/info', (err, data) => {
-        if (err) {
-          console.log('CHECK YOUR DB');
-          return;
-        }
+        this.checkError(err);
 
         const content = data.toString().split('\n');
-        if(content[content.length - 1] === ''){
+        if (content[content.length - 1] === '') {
           content.pop();
         }
         for (const line of content) {
@@ -154,43 +141,41 @@ class Back {
           }
         }
       });
-    })
+    });
   }
 
-  async changeInfo(login, newInfo){
+  async changeInfo(login, newInfo) {
     fs.readFile('data/info', (err, data) => {
-      if(err){
-        console.log('Check your DB');
-        process.exit(0);
-      }
+      this.checkError(err);
 
       const content = data.toString().split('\n');
-      if(content[content.length - 1] === ''){  
+      if (content[content.length - 1] === '') {
         content.pop();
       }
-      
-      for(let i = 0; i < content.length; i++){
+
+      for (let i = 0; i < content.length; i++) {
         const user = JSON.parse(content[i]);
-        if(user.login === login){
+        if (user.login === login) {
           content[i] = JSON.stringify(newInfo);
-          fs.writeFile('data/info', content.join('\n') + '\n', () => {});
+          fs.writeFile('data/info', content.join('\n') + '\n',
+            err => this.checkError(err));
         }
       }
     });
   }
 
-  async addMessage(from, to, message){
+  async addMessage(from, to, message) {
     fs.readFile('data/messages/' + from + ' - ' + to, err => {
-      if(err){
+      if (err) {
         fs.readFile('data/messages/' + to + ' - ' + from, err => {
-          if(err){
+          if (err) {
             fs.writeFile('data/messages/' + from + ' - ' + to,
-                        from + ': ' + message + '\n', () => {});
+              from + ': ' + message + '\n', err => this.checkError(err));
             return;
           }
 
           fs.appendFile('data/messages/' + to + ' - ' + from,
-                        from + ': ' + message + '\n', () => {});
+            from + ': ' + message + '\n', err => this.checkError(err));
           return;
         });
 
@@ -198,25 +183,22 @@ class Back {
       }
 
       fs.appendFile('data/messages/' + from + ' - ' + to,
-                    from + ': ' + message + '\n', () => {});
+        from + ': ' + message + '\n', err => this.checkError(err));
     });
   }
 
-  getMessages(from, to){
+  getMessages(from, to) {
     return new Promise(resolve => {
       fs.readFile('data/messages/' + from + ' - ' + to, (err, data) => {
-        if(err){
+        if (err) {
           fs.readFile('data/messages/' + to + ' - ' + from, (err, data) => {
-            if(err){
-              resolve();
-              return;
-            }
+            this.checkError(err);
 
             const content = data.toString().split('\n');
             content.pop();
             resolve(content);
           });
-          
+
           return;
         }
 
@@ -227,57 +209,52 @@ class Back {
     });
   }
 
-  async changePassword(login, newPassword){
+  async changePassword(login, newPassword) {
     fs.readFile('data/authorize', (err, data) => {
-      if(err){
-        console.log('Check your DB');
-        process.exit(0);
-      }
+      this.checkError(err);
 
       const content = data.toString().split('\n');
-      if(content[content.length - 1] === '') content.pop();
-      for(let i = 0; i < content.length; i++){
+      if (content[content.length - 1] === '') content.pop();
+      for (let i = 0; i < content.length; i++) {
         const account = content[i].split(' - ');
-        if(account[0] === login){
+        if (account[0] === login) {
           content[i] = login + ' - ' + newPassword;
 
-          if(content.length === 1){
+          if (content.length === 1) {
             content[0] += '\n';
-            fs.writeFile('data/authorize', content[0], () => {});  
+            fs.writeFile('data/authorize', content[0],
+              err => this.checkError(err));
           } else {
-            fs.writeFile('data/authorize', content.join('\n'), () => {});
+            fs.writeFile('data/authorize', content.join('\n'),
+              err => this.checkError(err));
           }
         }
       }
     });
   }
 
-  async sendFile(to, path){
-    fs.mkdir('data/dropbox/' + to, () => {
-      const file = path.split('/').pop();
-      fs.copyFile(path, 'data/dropbox/' + to + '/' + file, err => {
-        if(err){
-          console.log('Something went wrong while sending:\n');
-          throw err;
-        }
-      });
+  async sendFile(to, path) {
+    const file = path.split('/').pop();
+
+    fs.copyFile(path, 'data/dropbox/' + to + '/' + file, err => {
+      if (err) {
+        fs.mkdir('data/dropbox/' + to, err => this.checkError(err));
+        this.sendFile(to, path);
+      }
     });
   }
 
-  getChats(login){
+  getChats(login) {
     return new Promise(resolve => {
       fs.readdir('data/messages', (err, files) => {
-        if(err){
-          console.log('Smth went wrong in reading dir');
-          resolve();
-        }
+        this.checkError(err);
 
         let result = [];
-        for(let i = 0; i < files.length; i++){
+        for (let i = 0; i < files.length; i++) {
           const file = files[i].split(' - ');
           const index = file.indexOf(login);
-          
-          if(index === -1){
+
+          if (index === -1) {
             continue;
           } else {
             const chat = file.filter(user => user !== login);
@@ -290,42 +267,35 @@ class Back {
     });
   }
 
-  async addNews(login, news){
+  async addNews(login, news) {
     fs.readFile('data/news', err => {
-      if(err){
-        console.log('Check DB');
-        return;
-      }
+      this.checkError(err);
 
-      fs.appendFile('data/news', login + ': ' + news + '\n', () => {});
+      fs.appendFile('data/news', login + ': ' + news + '\n',
+        err => this.checkError(err));
     });
   }
 
-  getNews(){
+  getNews() {
     return new Promise(resolve => {
       fs.readFile('data/news', (err, data) => {
-        if(err){
-          console.log('Check DB');
-          return;
-        }
+        this.checkError(err);
 
         const content  = data.toString().split('\n');
-        if(content[content.length - 1] === ''){
-          content.pop();
-        }
+        if (content[content.length - 1] === '') content.pop();
 
         resolve(content);
       });
     });
   }
 
-  checkFriends(login, friend, users){
-    for(let i = 0; i < users.length; i++){
+  checkFriends(login, friend, users) {
+    for (let i = 0; i < users.length; i++) {
       const user = users[i].split(': ');
-      if(user[0] === login){
+      if (user[0] === login) {
         const friends = user[1].split(', ');
-        for(let j = 0; j < friends.length; j++){
-          if(friends[j] === friend) return true;
+        for (let j = 0; j < friends.length; j++) {
+          if (friends[j] === friend) return true;
         }
       }
     }
@@ -333,50 +303,45 @@ class Back {
     return false;
   }
 
-  async addFriend(login, friend){
+  async addFriend(login, friend) {
     fs.readFile('data/friends', async (err, data) => {
-      if(err){
-        console.log('Check DB');
-        return;
-      }
+      this.checkError(err);
 
       const content = data.toString().split('\n');
-      if(content[content.length - 1] === '') content.pop();
-      if(this.checkFriends(login, friend, content)) return;
+      if (content[content.length - 1] === '') content.pop();
+      if (this.checkFriends(login, friend, content)) return;
 
       let flag = true;
-      for(let i = 0; i < content.length; i++){
+      for (let i = 0; i < content.length; i++) {
         const user = content[i].split(': ');
-        if(user[0] === login){
+        if (user[0] === login) {
           user[1] = user[1] + ', ' + friend;
           content[i] = user.join(': ');
           flag = false;
-          fs.writeFile('data/friends', content.join('\n') + '\n', () => {});
+          fs.writeFile('data/friends', content.join('\n') + '\n',
+            err => this.checkError(err));
           break;
         }
       }
 
-      if(flag) fs.appendFile('data/friends', login + ': ' + friend + '\n', () => {});
+      if (flag) fs.appendFile('data/friends', login + ': ' + friend + '\n',
+        err => this.checkError(err));
       await this.addFriend(friend, login);
     });
   }
 
-  getFriends(login){
+  getFriends(login) {
     return new Promise(resolve => {
       fs.readFile('data/friends', (err, data) => {
-        if(err){
-          console.log('Check DB');
-          resolve();
-          return;
-        }
+        this.checkError(err);
 
         const content = data.toString().split('\n');
-        if(content[content.length - 1] === '') content.pop();
-        for(let i = 0; i < content.length; i++){
+        if (content[content.length - 1] === '') content.pop();
+        for (let i = 0; i < content.length; i++) {
           const user = content[i].split(': ');
-          if(user[0] === login){
+          if (user[0] === login) {
             resolve(user[1].split(', '));
-            break; 
+            break;
           }
         }
       });
@@ -386,8 +351,8 @@ class Back {
 
 module.exports = Back;
 
-// (async () => {
-//   const api = new Back();
-//   const a = await api.getFriends('Arrtem');
-//   console.log(a);
-// })();
+(async () =>{
+  const a = new Back();
+  const res = await a.getFrontStorage();
+  console.log(res);
+})();
