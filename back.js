@@ -25,49 +25,48 @@ class Back {
     if (err) throw err;
   }
 
+  getFrontStorage(){
+    return new Promise(resolve => {
+      fs.readFile('storage.json', (err, data) => {
+        this.checkError(err);
+
+        const storage = JSON.parse(data);
+        resolve(storage);
+      });
+    });
+  }
+
   // TODO IN FRONT:
   // FIRSTLY, NEED TO CHECK/CREATE DATABASE IN DIRECTORY OF PROJECT
 
   createDB() {
+    const files = ['authorize', 'info', 'friends', 'news'];
+    const dirs = ['messages', 'dropbox'];
+    
     return new Promise(resolve => {
-      fs.mkdir('data', err => {
-        const files = ['authorize', 'info', 'friends', 'news'];
-        const dirs = ['messages', 'dropbox'];
-
-        if (err) {
-          for (const file of files) {
-            fs.readFile('data/' + file, err => {
-              if (err) {
-                fs.writeFile('data/' + file, '', err => {
-                  this.checkError(err);
-                });
-              }
-            });
-          }
-
-          for (const dir of dirs) {
-            fs.mkdir('data/' + dir, err => {
-              if (err) resolve();
-            });
-          }
-
-          return;
+      fs.access('data', err => {
+        if(err){
+          fs.mkdir('data', err => this.checkError(err));
         }
-
-        for (const file of files) {
-          fs.writeFile('data/' + file, '', err => {
-            this.checkError(err);
-          });
-        }
-
-        for (const dir of dirs) {
-          fs.mkdir('data/' + dir, err => {
-            this.checkError(err);
-          });
-        }
-
-        resolve();
       });
+
+      for(let file of files){
+        fs.access('data/' + file, err => {
+          if(err){
+            fs.writeFile('data/' + file, '', err => this.checkError(err));
+          }
+        });
+      }
+
+      for(let dir of dirs){
+        fs.access('data/' + dir, err => {
+          if(err){
+            fs.mkdir('data/' + dir, err => this.checkError(err));
+          }
+        });
+      }
+
+      resolve();
     });
   }
 
@@ -352,5 +351,8 @@ class Back {
 
 module.exports = Back;
 
-(async () => {
+(async () =>{
+  const a = new Back();
+  const res = await a.getFrontStorage();
+  console.log(res);
 })();
