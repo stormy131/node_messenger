@@ -65,15 +65,21 @@
         "friends": "check your friend list and add new friends",
         "messages": "check message history and write new messages",
         "news": "see the latest news from other users",
-        "notifications": "",
         "exit": "stop running Node Messanger"
     },
     "hotkeysDescription": {
         "login": "Ctrl + q",
         "account": "Ctrl + w",
         "messages": "Ctrl + e",
-        "news": "Ctrl + r",
-        "notifications": "Ctrl + t"
+        "friends": "Ctrl + r",
+        "news": "Ctrl + t"
+    },
+    "buttons": {
+        "q": "login",
+        "w": "account",
+        "e": "messages",
+        "r": "friends",
+        "t": "news"
     },
     "profileInfo": [
         "name",

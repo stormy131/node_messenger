@@ -106,3 +106,4 @@ dist
 .idea
 data
 test.js
+yarn.lock
