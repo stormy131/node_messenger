@@ -5,7 +5,8 @@
   "main": "front.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "eslint back.js"
+    "lint": "eslint back.js",
+    "lintf": "eslint messenger.js"
   },
   "repository": {
     "type": "git",
@@ -18,6 +19,8 @@
   },
   "homepage": "https://github.com/stormy131/node_messenger#readme",
   "devDependencies": {
+    "eslint": "^7.27.0",
     "prettier": "2.3.0"
-  }
+  },
+  "dependencies": {}
 }
