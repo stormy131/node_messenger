@@ -274,9 +274,10 @@ class Back {
 
         let result = [];
         for (let i = 0; i < files.length; i++) {
-          const file = files[i].split(' - ').indexOf(login);
+          const file = files[i].split(' - ');
+          const index = file.indexOf(login);
 
-          if (file === -1) {
+          if (index === -1) {
             continue;
           } else {
             const chat = file.filter(user => user !== login);
@@ -347,10 +348,8 @@ class Back {
         }
       }
 
-      if (flag)
-        fs.appendFile('data/friends', login + ': ' + friend + '\n', err =>
-          this.checkError(err)
-        );
+      if (flag) await fs.promises.appendFile('data/friends',
+        login + ': ' + friend + '\n');
       await this.addFriend(friend, login);
     });
   }
@@ -361,13 +360,20 @@ class Back {
         this.checkError(err);
 
         const content = this.renderData(data);
+        let res = [];
+        let flag = true;
+
         for (let i = 0; i < content.length; i++) {
           const user = content[i].split(': ');
           if (user[0] === login) {
-            resolve(user[1].split(', '));
+            flag = false;
+            res = user[1].split(', ');
+            resolve(res);
             break;
           }
         }
+
+        if (flag) resolve(res);
       });
     });
   }
