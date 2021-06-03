@@ -13,27 +13,23 @@ class Account {
   }
 
   toString() {
-    return (
-      'User: ' +
-      this.login +
-      '\nFull name: ' +
-      this.name +
-      '\nAge: ' +
-      this.age +
-      '\nCountry: ' +
-      this.country +
-      ' City ' +
-      this.city +
-      '\nInfo: ' +
-      this.info
-    );
+    return 'User: ' + this.login + ' \nFull name: ' + this.name +
+      '\nAge: ' + this.age + '\nCountry: ' + this.country + ' City ' +
+      this.city + '\nInfo: ' + this.info;
   }
 }
 
 class Back {
-  
+
   checkError(err) {
     if (err) throw err;
+  }
+
+  renderData(data) {
+    const content = data.toString().split('\n');
+    if (content[content.length - 1] === '') content.pop();
+
+    return content;
   }
 
   getFrontStorage() {
@@ -86,7 +82,8 @@ class Back {
       fs.readFile('data/authorize', (err, data) => {
         this.checkError(err);
 
-        const users = data.toString().split('\n');
+        const users = this.renderData(data);
+
         if (users[users.length - 1] === '') users.pop();
         for (let i = 0; i < users.length; i++) {
           const user = users[i].split(' - ');
@@ -114,7 +111,8 @@ class Back {
       fs.readFile('data/authorize', (err, data) => {
         this.checkError(err);
 
-        const users = data.toString().split('\n');
+        const users = this.renderData(data);
+
         if (users[users.length - 1] === '') users.pop();
         for (let i = 0; i < users.length; i++) {
           const user = users[i].split(' - ');
@@ -144,10 +142,7 @@ class Back {
       fs.readFile('data/info', (err, data) => {
         this.checkError(err);
 
-        const content = data.toString().split('\n');
-        if (content[content.length - 1] === '') {
-          content.pop();
-        }
+        const content = this.renderData(data);
         for (const line of content) {
           const user = JSON.parse(line);
           if (user.login === login) {
@@ -162,10 +157,7 @@ class Back {
     fs.readFile('data/info', (err, data) => {
       this.checkError(err);
 
-      const content = data.toString().split('\n');
-      if (content[content.length - 1] === '') {
-        content.pop();
-      }
+      const content = this.renderData(data);
 
       for (let i = 0; i < content.length; i++) {
         const user = JSON.parse(content[i]);
@@ -221,8 +213,7 @@ class Back {
             fs.readFile('data/messages/' + file, (err, data) => {
               this.checkError(err);
 
-              const content = data.toString().split('\n');
-              if (content[content.length - 1] === '') content.pop();
+              const content = this.renderData(data);
               resolve(content);
             });
 
@@ -239,8 +230,7 @@ class Back {
     fs.readFile('data/authorize', (err, data) => {
       this.checkError(err);
 
-      const content = data.toString().split('\n');
-      if (content[content.length - 1] === '') content.pop();
+      const content = this.renderData(data);
 
       for (let i = 0; i < content.length; i++) {
         const account = content[i].split(' - ');
@@ -315,8 +305,7 @@ class Back {
       fs.readFile('data/news', (err, data) => {
         this.checkError(err);
 
-        const content = data.toString().split('\n');
-        if (content[content.length - 1] === '') content.pop();
+        const content = this.renderData(data);
 
         resolve(content);
       });
@@ -341,8 +330,8 @@ class Back {
     fs.readFile('data/friends', async (err, data) => {
       this.checkError(err);
 
-      const content = data.toString().split('\n');
-      if (content[content.length - 1] === '') content.pop();
+      const content = this.renderData(data);
+
       if (this.checkFriends(login, friend, content)) return;
 
       let flag = true;
@@ -372,8 +361,7 @@ class Back {
       fs.readFile('data/friends', (err, data) => {
         this.checkError(err);
 
-        const content = data.toString().split('\n');
-        if (content[content.length - 1] === '') content.pop();
+        const content = this.renderData(data);
         for (let i = 0; i < content.length; i++) {
           const user = content[i].split(': ');
           if (user[0] === login) {
