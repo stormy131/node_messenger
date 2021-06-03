@@ -59,13 +59,19 @@ async function showMessage(text, color) {
 }
 
 async function checkInput(input, arg1, arg2, res1, res2) {
-  if (input === arg1 || input === arg1[0]) {
-    await res1();
-  } else if (input === arg2 || input === arg2[0]) {
-    await res2();
-  } else {
+    const object = {
+        [arg1]: res1,
+        [arg2]: res2
+    }
+
+    for (const [key, value] of Object.entries(object)) {
+        if (input === key || input === key[0]) {
+            value();
+            return;
+        }
+    }
+
     showMessage('invalidInput', 'red');
-  }
 }
 
 function list(object) {
@@ -222,6 +228,7 @@ async function showAccount() {
   showMessage('infoCheck', 'white');
   console.log('\u001b[0m\x1b[1A');
   console.table(infoObject);
+  rl.prompt();
 }
 
 async function accountScreen() {
