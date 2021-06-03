@@ -274,10 +274,9 @@ class Back {
 
         let result = [];
         for (let i = 0; i < files.length; i++) {
-          const file = files[i].split(' - ');
-          const index = file.indexOf(login);
+          const file = files[i].split(' - ').indexOf(login);
 
-          if (index === -1) {
+          if (file === -1) {
             continue;
           } else {
             const chat = file.filter(user => user !== login);
