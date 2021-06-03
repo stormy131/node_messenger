@@ -168,24 +168,24 @@ class Back {
     return new Promise(resolve => {
       fs.readdir('data/messages', (err, files) => {
         this.checkError(err);
-  
-        for(let file of files){
-          if(file === from + ' - ' + to || file === to + ' - ' + from){
-            fs.appendFile('data/messages/' + file, 
-                from + ': ' + message + '\n', err => {
-              this.checkError(err);
-              resolve();
-            });
-  
+
+        for (const file of files) {
+          if (file === from + ' - ' + to || file === to + ' - ' + from) {
+            fs.appendFile('data/messages/' + file,
+              from + ': ' + message + '\n', err => {
+                this.checkError(err);
+                resolve();
+              });
+
             return;
           }
         }
-  
-        fs.writeFile('data/messages/' + from + ' - ' + to, 
-            from + ': ' + message + '\n', err => {
-          this.checkError(err);
-          resolve();
-        });
+
+        fs.writeFile('data/messages/' + from + ' - ' + to,
+          from + ': ' + message + '\n', err => {
+            this.checkError(err);
+            resolve();
+          });
       });
     });
   }
@@ -195,13 +195,13 @@ class Back {
       fs.readdir('data/messages', (err, files) => {
         this.checkError(err);
 
-        for(let file of files){
-          if(file === from + ' - ' + to || file === to + ' - ' + from) {
+        for (const file of files) {
+          if (file === from + ' - ' + to || file === to + ' - ' + from) {
             fs.readFile('data/messages/' + file, (err, data) => {
               this.checkError(err);
 
               const content = data.toString().split('\n');
-              if(content[content.length - 1] === '') content.pop();
+              if (content[content.length - 1] === '') content.pop();
               resolve(content);
             });
 
@@ -220,7 +220,7 @@ class Back {
 
       const content = data.toString().split('\n');
       if (content[content.length - 1] === '') content.pop();
-      
+
       for (let i = 0; i < content.length; i++) {
         const account = content[i].split(' - ');
         if (account[0] === login) {
@@ -230,12 +230,12 @@ class Back {
             content[0] += '\n';
             fs.writeFile('data/authorize', content[0],
               err => this.checkError(err));
-            
+
             return;
           }
-          
+
           fs.writeFile('data/authorize', content.join('\n'),
-              err => this.checkError(err));
+            err => this.checkError(err));
 
           break;
         }
