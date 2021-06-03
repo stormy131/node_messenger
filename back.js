@@ -25,7 +25,7 @@ class Back {
     if (err) throw err;
   }
 
-  getFrontStorage(){
+  getFrontStorage() {
     return new Promise(resolve => {
       fs.readFile('storage.json', (err, data) => {
         this.checkError(err);
@@ -42,25 +42,25 @@ class Back {
   createDB() {
     const files = ['authorize', 'info', 'friends', 'news'];
     const dirs = ['messages', 'dropbox'];
-    
+
     return new Promise(resolve => {
       fs.access('data', err => {
-        if(err){
+        if (err) {
           fs.mkdir('data', err => this.checkError(err));
         }
       });
 
-      for(let file of files){
+      for (const file of files) {
         fs.access('data/' + file, err => {
-          if(err){
+          if (err) {
             fs.writeFile('data/' + file, '', err => this.checkError(err));
           }
         });
       }
 
-      for(let dir of dirs){
+      for (const dir of dirs) {
         fs.access('data/' + dir, err => {
-          if(err){
+          if (err) {
             fs.mkdir('data/' + dir, err => this.checkError(err));
           }
         });
@@ -164,47 +164,52 @@ class Back {
     });
   }
 
-  async addMessage(from, to, message) {
-    fs.readFile('data/messages/' + from + ' - ' + to, err => {
-      if (err) {
-        fs.readFile('data/messages/' + to + ' - ' + from, err => {
-          if (err) {
-            fs.writeFile('data/messages/' + from + ' - ' + to,
-              from + ': ' + message + '\n', err => this.checkError(err));
+  addMessage(from, to, message) {
+    return new Promise(resolve => {
+      fs.readdir('data/messages', (err, files) => {
+        this.checkError(err);
+  
+        for(let file of files){
+          if(file === from + ' - ' + to || file === to + ' - ' + from){
+            fs.appendFile('data/messages/' + file, 
+                from + ': ' + message + '\n', err => {
+              this.checkError(err);
+              resolve();
+            });
+  
             return;
           }
-
-          fs.appendFile('data/messages/' + to + ' - ' + from,
-            from + ': ' + message + '\n', err => this.checkError(err));
-          return;
+        }
+  
+        fs.writeFile('data/messages/' + from + ' - ' + to, 
+            from + ': ' + message + '\n', err => {
+          this.checkError(err);
+          resolve();
         });
-
-        return;
-      }
-
-      fs.appendFile('data/messages/' + from + ' - ' + to,
-        from + ': ' + message + '\n', err => this.checkError(err));
+      });
     });
   }
 
   getMessages(from, to) {
-    return new Promise(resolve => {
-      fs.readFile('data/messages/' + from + ' - ' + to, (err, data) => {
-        if (err) {
-          fs.readFile('data/messages/' + to + ' - ' + from, (err, data) => {
-            this.checkError(err);
+    return new Promise((resolve, reject) => {
+      fs.readdir('data/messages', (err, files) => {
+        this.checkError(err);
 
-            const content = data.toString().split('\n');
-            content.pop();
-            resolve(content);
-          });
+        for(let file of files){
+          if(file === from + ' - ' + to || file === to + ' - ' + from) {
+            fs.readFile('data/messages/' + file, (err, data) => {
+              this.checkError(err);
 
-          return;
+              const content = data.toString().split('\n');
+              if(content[content.length - 1] === '') content.pop();
+              resolve(content);
+            });
+
+            return;
+          }
         }
 
-        const content = data.toString().split('\n');
-        content.pop();
-        resolve(content);
+        reject();
       });
     });
   }
@@ -215,6 +220,7 @@ class Back {
 
       const content = data.toString().split('\n');
       if (content[content.length - 1] === '') content.pop();
+      
       for (let i = 0; i < content.length; i++) {
         const account = content[i].split(' - ');
         if (account[0] === login) {
@@ -224,10 +230,14 @@ class Back {
             content[0] += '\n';
             fs.writeFile('data/authorize', content[0],
               err => this.checkError(err));
-          } else {
-            fs.writeFile('data/authorize', content.join('\n'),
-              err => this.checkError(err));
+            
+            return;
           }
+          
+          fs.writeFile('data/authorize', content.join('\n'),
+              err => this.checkError(err));
+
+          break;
         }
       }
     });
@@ -351,8 +361,4 @@ class Back {
 
 module.exports = Back;
 
-(async () =>{
-  const a = new Back();
-  const res = await a.getFrontStorage();
-  console.log(res);
-})();
+
