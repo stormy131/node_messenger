@@ -204,7 +204,7 @@ class Back {
   }
 
   getMessages(from, to) {
-    return new Promise((resolve, reject) => {
+    return new Promise(resolve => {
       fs.readdir('data/messages', (err, files) => {
         this.checkError(err);
 
@@ -221,7 +221,7 @@ class Back {
           }
         }
 
-        reject();
+        resolve();
       });
     });
   }

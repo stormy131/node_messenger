@@ -115,9 +115,10 @@ function logoutScreen() {
     if (currentLogin) {
         showMessage('logoutSuccess', 'green');
         currentLogin = null;
-    } else {
-        showMessage('logoutFail', 'red');
+        return;
     }
+
+    showMessage('logoutFail', 'red');
 }
 
 async function infoAdd() {
@@ -133,11 +134,12 @@ async function infoAdd() {
         }
         await backend.addInfo(currentLogin, infoArray);
         showMessage('infoAddSuccess', 'green');
-    } else {
-        const infoArray = ['', '', '', '', ''];
-        await backend.addInfo(currentLogin, infoArray);
-        showMessage('infoAddLater', 'cyan');
+        return;
     }
+    
+    const infoArray = ['', '', '', '', ''];
+    await backend.addInfo(currentLogin, infoArray);
+    showMessage('infoAddLater', 'cyan');
 }
 
 async function registrationScreen() {
@@ -186,9 +188,11 @@ async function changePassword() {
         } else {
             showMessage('passChangeFail', 'red');
         }
-    } else {
-        showMessage('passCheckFail', 'red');
-    }
+
+        return;
+    } 
+
+    showMessage('passCheckFail', 'red');
 }
 
 async function editAccount() {
@@ -206,9 +210,10 @@ async function editAccount() {
 
     if (input < storage.profileInfo.length) {
         await changeInfo(input);
-    } else {
-        await changePassword();
+        return;
     }
+
+    await changePassword();
 }
 
 async function showAccount() {
@@ -260,12 +265,10 @@ async function friendsScreen() {
 
 async function writeMessage() {
     const partner = await question('writeMess');
-    if (partner === '') return;
+    if (!partner) return;
 
     const messObject = await backend.getMessages(currentLogin, partner);
-    if (messObject === undefined) {
-        showMessage('messagesNew', 'white');
-    } else {
+    if (messObject) {
         const dialog = messObject
             .join('\n')
             .split(partner)
@@ -273,19 +276,20 @@ async function writeMessage() {
             .split(currentLogin)
             .join(storage.colors.magenta + currentLogin + storage.colors.white);
         console.log(dialog);
+    } else {
+        showMessage('messagesNew', 'white');
     }
 
     showMessage('sendFile', 'cyan');
     const text = await question('newMess');
 
-    if (text === '') return;
-    else {
-        await backend.addMessage(currentLogin, partner, text);
-        console.log(
-            storage.colors.magenta + currentLogin +
-            storage.colors.white + ': ' + text
-        );
-    }
+    if (!text) return;
+    
+    await backend.addMessage(currentLogin, partner, text);
+    console.log(
+        storage.colors.magenta + currentLogin +
+        storage.colors.white + ': ' + text
+    );
 }
 
 async function messageScreen() {
