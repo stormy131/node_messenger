@@ -13,14 +13,25 @@ class Account {
   }
 
   toString() {
-    return 'User: ' + this.login + '\nFull name: ' + this.name +
-      '\nAge: ' + this.age + '\nCountry: ' + this.country + ' City ' +
-      this.city + '\nInfo: ' + this.info;
+    return (
+      'User: ' +
+      this.login +
+      '\nFull name: ' +
+      this.name +
+      '\nAge: ' +
+      this.age +
+      '\nCountry: ' +
+      this.country +
+      ' City ' +
+      this.city +
+      '\nInfo: ' +
+      this.info
+    );
   }
 }
 
 class Back {
-
+  
   checkError(err) {
     if (err) throw err;
   }
@@ -86,11 +97,14 @@ class Back {
           }
         }
 
-        fs.appendFile('data/authorize',
-          login + ' - ' + password + '\n', err => {
+        fs.appendFile(
+          'data/authorize',
+          login + ' - ' + password + '\n',
+          err => {
             resolve(true);
             this.checkError(err);
-          });
+          }
+        );
       });
     });
   }
@@ -157,8 +171,9 @@ class Back {
         const user = JSON.parse(content[i]);
         if (user.login === login) {
           content[i] = JSON.stringify(newInfo);
-          fs.writeFile('data/info', content.join('\n') + '\n',
-            err => this.checkError(err));
+          fs.writeFile('data/info', content.join('\n') + '\n', err =>
+            this.checkError(err)
+          );
         }
       }
     });
@@ -171,21 +186,27 @@ class Back {
 
         for (const file of files) {
           if (file === from + ' - ' + to || file === to + ' - ' + from) {
-            fs.appendFile('data/messages/' + file,
-              from + ': ' + message + '\n', err => {
+            fs.appendFile(
+              'data/messages/' + file,
+              from + ': ' + message + '\n',
+              err => {
                 this.checkError(err);
                 resolve();
-              });
+              }
+            );
 
             return;
           }
         }
 
-        fs.writeFile('data/messages/' + from + ' - ' + to,
-          from + ': ' + message + '\n', err => {
+        fs.writeFile(
+          'data/messages/' + from + ' - ' + to,
+          from + ': ' + message + '\n',
+          err => {
             this.checkError(err);
             resolve();
-          });
+          }
+        );
       });
     });
   }
@@ -228,14 +249,16 @@ class Back {
 
           if (content.length === 1) {
             content[0] += '\n';
-            fs.writeFile('data/authorize', content[0],
-              err => this.checkError(err));
+            fs.writeFile('data/authorize', content[0], err =>
+              this.checkError(err)
+            );
 
             return;
           }
 
-          fs.writeFile('data/authorize', content.join('\n'),
-            err => this.checkError(err));
+          fs.writeFile('data/authorize', content.join('\n'), err =>
+            this.checkError(err)
+          );
 
           break;
         }
@@ -281,8 +304,9 @@ class Back {
     fs.readFile('data/news', err => {
       this.checkError(err);
 
-      fs.appendFile('data/news', login + ': ' + news + '\n',
-        err => this.checkError(err));
+      fs.appendFile('data/news', login + ': ' + news + '\n', err =>
+        this.checkError(err)
+      );
     });
   }
 
@@ -291,7 +315,7 @@ class Back {
       fs.readFile('data/news', (err, data) => {
         this.checkError(err);
 
-        const content  = data.toString().split('\n');
+        const content = data.toString().split('\n');
         if (content[content.length - 1] === '') content.pop();
 
         resolve(content);
@@ -328,14 +352,17 @@ class Back {
           user[1] = user[1] + ', ' + friend;
           content[i] = user.join(': ');
           flag = false;
-          fs.writeFile('data/friends', content.join('\n') + '\n',
-            err => this.checkError(err));
+          fs.writeFile('data/friends', content.join('\n') + '\n', err =>
+            this.checkError(err)
+          );
           break;
         }
       }
 
-      if (flag) fs.appendFile('data/friends', login + ': ' + friend + '\n',
-        err => this.checkError(err));
+      if (flag)
+        fs.appendFile('data/friends', login + ': ' + friend + '\n', err =>
+          this.checkError(err)
+        );
       await this.addFriend(friend, login);
     });
   }
@@ -360,5 +387,3 @@ class Back {
 }
 
 module.exports = Back;
-
-
