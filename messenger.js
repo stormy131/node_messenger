@@ -59,19 +59,19 @@ async function showMessage(text, color) {
 }
 
 async function checkInput(input, arg1, arg2, res1, res2) {
-    const object = {
-        [arg1]: res1,
-        [arg2]: res2
-    }
+  const object = {
+    [arg1]: res1,
+    [arg2]: res2
+  };
 
-    for (const [key, value] of Object.entries(object)) {
-        if (input === key || input === key[0]) {
-            value();
-            return;
-        }
+  for (const [key, value] of Object.entries(object)) {
+    if (input === key || input === key[0]) {
+      value();
+      return;
     }
+  }
 
-    showMessage('invalidInput', 'red');
+  showMessage('invalidInput', 'red');
 }
 
 function list(object) {
