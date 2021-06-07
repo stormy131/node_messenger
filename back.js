@@ -277,12 +277,10 @@ class Back {
           const file = files[i].split(' - ');
           const index = file.indexOf(login);
 
-          if (index === -1) {
-            continue;
-          } else {
-            const chat = file.filter(user => user !== login);
-            result = result.concat(chat);
-          }
+          if (index === -1) continue;
+          
+          const chat = file.filter(user => user !== login);
+          result = result.concat(chat);
         }
 
         resolve(result);
